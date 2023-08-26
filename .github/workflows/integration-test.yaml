@@ -1,0 +1,12 @@
+name: integration-test
+on: [push]
+jobs:
+  integration-test:
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: install golang
+        uses: actions/setup-go@v4
+      - name: run test
+        run: go test -v ./...

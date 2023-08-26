@@ -130,5 +130,5 @@ func runMigrations(sql *sql.DB) {
 		log.Fatalf("failed run migrations: %v", err)
 	}
 
-	log.Print("Success run migrations")
+	log.Print("success run migrations")
 }

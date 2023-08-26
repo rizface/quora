@@ -11,4 +11,18 @@ services:
       POSTGRES_USER: pgquora
       POSTGRES_PASSWORD: pgquora
       POSTGRES_DB: pgquora
-    
+  quora:
+    container_name: quora
+    image: quora:local
+    restart: on-failure
+    ports:
+      - 3000:3000
+    depends_on:
+      - pgquora
+    environment:
+      - PG_HOST=pgquora
+      - PG_PORT=5432
+      - PG_USER=pgquora
+      - PG_PASSWORD=pgquora
+      - PG_DBNAME=pgquora
+      - APP_PORT=:3000

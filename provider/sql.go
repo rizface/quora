@@ -17,7 +17,12 @@ func ProvideSQL() (*sql.DB, error) {
 		dbname   = os.Getenv("PG_DBNAME")
 	)
 
-	return sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+	sql, err := sql.Open("postgres", fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		user, password, host, port, dbname,
 	))
+	if err != nil {
+		return nil, err
+	}
+
+	return sql, sql.Ping()
 }
