@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  pgquora:
+    container_name: pgquora
+    image: postgres:15
+    restart: on-failure
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: pgquora
+      POSTGRES_PASSWORD: pgquora
+      POSTGRES_DB: pgquora
+    

@@ -5,6 +5,7 @@ this repository was created to maintain my backend development skills, for examp
 - Redis
 - Docker
 - Redis
+- Golang Migration
 
 and implement other learned skills, like: 
 - AWS S3

@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +13,9 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/rizface/quora/account"
 	"github.com/rizface/quora/provider"
 )
@@ -52,6 +57,8 @@ func main() {
 		}
 	}()
 
+	runMigrations(dependencies.sql)
+
 	// start the app
 	log.Fatal(app.Start())
 }
@@ -64,7 +71,7 @@ type App struct {
 func NewApp(d *Dependencies) *App {
 	return &App{
 		Deps:    d,
-		Account: account.NewFeature(d.router),
+		Account: account.NewFeature(d.router, d.sql),
 	}
 }
 
@@ -88,14 +95,40 @@ func (s *App) Stop(ctx context.Context) error {
 type Dependencies struct {
 	server *http.Server
 	router *chi.Mux
+	sql    *sql.DB
 }
 
 func InitDependencies() *Dependencies {
 	router := provider.ProvideRouter()
 	server := provider.ProviderServer(router)
+	sql, err := provider.ProvideSQL()
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return &Dependencies{
 		router: router,
 		server: server,
+		sql:    sql,
 	}
+}
+
+func runMigrations(sql *sql.DB) {
+	driver, err := postgres.WithInstance(sql, &postgres.Config{})
+	if err != nil {
+		log.Fatalf("failed create pg instance: %v", err)
+	}
+
+	m, err := migrate.NewWithDatabaseInstance("file://db/migrations", os.Getenv("PG_DBNAME"), driver)
+	if err != nil {
+		log.Fatalf("failed to create migration instance: %v", err)
+	}
+
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		log.Fatalf("failed run migrations: %v", err)
+	}
+
+	log.Print("Success run migrations")
 }

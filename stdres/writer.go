@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 )
 
@@ -24,31 +25,23 @@ type Response struct {
 }
 
 func Writer(w http.ResponseWriter, resp Response) {
-	const (
-		InternalServerErrorJson = `{"code": 500, "info": "internal server error"}`
-	)
-
-	var internalServerErrorResponse = func() {
-		logger.Error("failed to write response")
-
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(InternalServerErrorJson)) //nolint:errcheck
-	}
-
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.Code)
 
-	respB, err := json.Marshal(resp)
-	if err != nil {
-		internalServerErrorResponse()
+	requestId := w.Header().Get("X-Request-Id")
+	if requestId != "" {
+		resp.RequestId = requestId
+	} else {
+		resp.RequestId = uuid.NewString()
+		w.Header().Set("X-Request-Id", resp.RequestId)
 	}
 
 	if resp.Code >= 500 {
+		respB, _ := json.Marshal(resp) //nolint:errcheck
+
 		logger.Error(string(respB))
+
+		resp.Info = "internal server error"
 	}
 
-	_, err = w.Write(respB)
-	if err != nil {
-		internalServerErrorResponse()
-	}
+	json.NewEncoder(w).Encode(resp) //nolint:errcheck
 }
