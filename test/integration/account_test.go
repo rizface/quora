@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/rizface/quora/provider"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,10 +19,10 @@ func TestCreateAccount(t *testing.T) {
 		services = spawnServices(ctx)
 	)
 
-	// db, err := provider.ProvideSQL()
-	// if err != nil {
-	// 	log.Fatalf("failed open connection to pg: %v", err)
-	// }
+	db, err := provider.ProvideSQL()
+	if err != nil {
+		log.Fatalf("failed open connection to pg: %v", err)
+	}
 
 	defer func() {
 		if err := services.quora.Terminate(ctx); err != nil {
@@ -52,17 +53,17 @@ func TestCreateAccount(t *testing.T) {
 				"email":    "nice@gmail.com",
 			},
 			code: http.StatusOK,
-			// checkExpectation: func(t *testing.T, resp *http.Response) {
-			// 	var counter int
+			checkExpectation: func(t *testing.T, resp *http.Response) {
+				var counter int
 
-			// 	err := db.
-			// 		QueryRowContext(ctx, `
-			// 		SELECT COUNT(id) as count from accounts WHERE username = $1
-			// 	`, "rizface").
-			// 		Scan(&counter)
-			// 	assert.Nil(t, err)
-			// 	assert.Equal(t, int(1), counter)
-			// },
+				err := db.
+					QueryRowContext(ctx, `
+					SELECT COUNT(id) as count from accounts WHERE username = $1
+				`, "rizface").
+					Scan(&counter)
+				assert.Nil(t, err)
+				assert.Equal(t, int(1), counter)
+			},
 		},
 		{
 			name: "failed create one employee - empty required field",
