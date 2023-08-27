@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"database/sql"
+	"errors"
 
 	"github.com/rizface/quora/account/value"
 )
@@ -52,7 +53,26 @@ func (r *Repository) Create(ctx context.Context, account value.AccountEntity) er
 		return err
 	}
 
+	account.SetId("")
+
 	_, err = r.sql.ExecContext(ctx, query, account.Id, account.Username, password, account.Email)
 
 	return err
+}
+
+func (r *Repository) FindByEmail(ctx context.Context, account value.AccountEntity) (value.AccountEntity, error) {
+	query := `SELECT id, username, email, password FROM accounts WHERE email = $1`
+
+	err := r.sql.
+		QueryRowContext(ctx, query, account.Email).
+		Scan(&account.Id, &account.Username, &account.Email, &account.Password)
+	if errors.Is(err, sql.ErrNoRows) {
+		return account, ErrAccountNotFound
+	}
+
+	if err != nil {
+		return account, err
+	}
+
+	return account, nil
 }

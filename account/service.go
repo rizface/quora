@@ -28,3 +28,19 @@ func (s *Service) Register(ctx context.Context, payload value.AccountPayload) (v
 
 	return account, nil
 }
+func (s *Service) Login(ctx context.Context, payload value.AccountPayload) (value.Authenticated, error) {
+	account := value.NewAccountEntity(payload)
+
+	account, err := s.repo.FindByEmail(ctx, account)
+	if err != nil {
+		return value.Authenticated{}, err
+	}
+
+	if !account.VerifyPassword(payload.Password) {
+		return value.Authenticated{}, ErrCredential
+	}
+
+	authenticated, err := value.NewAuthenticated(account)
+
+	return authenticated, err
+}

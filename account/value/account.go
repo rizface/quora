@@ -28,13 +28,15 @@ type AccountEntity struct {
 
 func NewAccountEntity(p AccountPayload) AccountEntity {
 	return AccountEntity{
-		Id:             uuid.NewString(),
-		Username:       p.Username,
-		Email:          p.Email,
-		Password:       p.Password,
-		EmailConfirmed: false,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+		Username: p.Username,
+		Email:    p.Email,
+		Password: p.Password,
+	}
+}
+
+func (a *AccountEntity) SetId(id string) {
+	if len(id) == 0 {
+		a.Id = uuid.NewString()
 	}
 }
 
@@ -53,4 +55,13 @@ func (a AccountEntity) GetPasswordHash() (string, error) {
 	}
 
 	return string(hash), nil
+}
+
+func (a AccountEntity) VerifyPassword(password string) bool {
+	var (
+		hashedBytes = []byte(a.Password)
+		passBytes   = []byte(password)
+	)
+
+	return bcrypt.CompareHashAndPassword(hashedBytes, passBytes) == nil
 }

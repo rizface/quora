@@ -27,5 +27,6 @@ func (f *Feature) RegisterRoutes() {
 
 	r.Route("/accounts", func(r chi.Router) {
 		r.Post("/", f.Handler.Register)
+		r.Post("/login", f.Handler.Login)
 	})
 }

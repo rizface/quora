@@ -75,3 +75,51 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		Info: "success",
 	})
 }
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var payload value.AccountPayload
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "invalid body request",
+		})
+
+		return
+	}
+
+	result, err := h.svc.Login(r.Context(), payload)
+
+	if errors.Is(err, ErrAccountNotFound) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusNotFound,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	if errors.Is(err, ErrCredential) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusInternalServerError,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	stdres.Writer(w, stdres.Response{
+		Code: http.StatusOK,
+		Data: result,
+		Info: "success",
+	})
+}
