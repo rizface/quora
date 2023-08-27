@@ -3,7 +3,6 @@ package integration
 import (
 	"context"
 	"log"
-	"os"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -36,23 +35,23 @@ func spawnPg(ctx context.Context, network string) testcontainers.Container {
 		log.Fatal(err.Error())
 	}
 
-	var resolveErr = func(err error) {
-		if err != nil {
-			log.Fatalf("resolve error: %v", err)
-		}
-	}
+	// var resolveErr = func(err error) {
+	// 	if err != nil {
+	// 		log.Fatalf("resolve error: %v", err)
+	// 	}
+	// }
 
-	host, err := pgC.Host(ctx)
-	resolveErr(err)
+	// host, err := pgC.Host(ctx)
+	// resolveErr(err)
 
-	port, err := pgC.MappedPort(ctx, "5432/tcp")
-	resolveErr(err)
+	// port, err := pgC.MappedPort(ctx, "5432/tcp")
+	// resolveErr(err)
 
-	os.Setenv("PG_HOST", host)
-	os.Setenv("PG_PORT", port.Port())
-	os.Setenv("PG_USER", "pgquora")
-	os.Setenv("PG_PASSWORD", "pgquora")
-	os.Setenv("PG_DBNAME", "pgquora")
+	// os.Setenv("PG_HOST", host)
+	// os.Setenv("PG_PORT", port.Port())
+	// os.Setenv("PG_USER", "pgquora")
+	// os.Setenv("PG_PASSWORD", "pgquora")
+	// os.Setenv("PG_DBNAME", "pgquora")
 
 	return pgC
 }
