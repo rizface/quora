@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -65,12 +66,14 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 		ExposedPorts: []string{"3000"},
 		Networks:     []string{network},
 		Env: map[string]string{
-			"PG_HOST":     ip,
-			"PG_PORT":     "5432",
-			"PG_USER":     "pgquora",
-			"PG_PASSWORD": "pgquora",
-			"PG_DBNAME":   "pgquora",
-			"APP_PORT":    ":3000",
+			"PG_HOST":            ip,
+			"PG_PORT":            "5432",
+			"PG_USER":            "pgquora",
+			"PG_PASSWORD":        "pgquora",
+			"PG_DBNAME":          "pgquora",
+			"APP_PORT":           ":3000",
+			"JWT_ACCESS_SECRET":  uuid.NewString(),
+			"JWT_REFRESH_SECRET": uuid.NewString(),
 		},
 		WaitingFor: wait.ForLog("success run migrations"),
 	}

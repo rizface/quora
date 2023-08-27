@@ -1,6 +1,7 @@
 package value
 
 import (
+	"errors"
 	"os"
 	"time"
 
@@ -13,7 +14,7 @@ type Token struct {
 }
 
 type Authenticated struct {
-	Id       string  `json:"login"`
+	Id       string  `json:"id"`
 	Username string  `json:"username"`
 	Email    string  `json:"email"`
 	Tokens   []Token `json:"tokens"`
@@ -43,6 +44,10 @@ func getTokens(a Authenticated) ([]Token, error) {
 		AccessType  = "access"
 		RefreshType = "refresh"
 	)
+
+	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
+		return []Token{}, errors.New("empty secret for token")
+	}
 
 	var generateToken = func(tokenType string, secret []byte, expires time.Time) (string, error) {
 		claim.ExpiresAt = jwt.NewNumericDate(time.Now().Add(24 * time.Hour))
