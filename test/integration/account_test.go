@@ -21,8 +21,8 @@ type scenario struct {
 
 func TestCreateAccount(t *testing.T) {
 	var (
-		ctx      = context.Background()
-		services = spawnServices(ctx)
+		ctx               = context.Background()
+		services, cleaner = spawnServices(ctx)
 	)
 
 	db, err := provider.ProvideSQL()
@@ -30,18 +30,7 @@ func TestCreateAccount(t *testing.T) {
 		log.Fatalf("failed open connection to pg: %v", err)
 	}
 
-	defer func() {
-		if err := services.quora.Terminate(ctx); err != nil {
-			log.Fatalf("fail termintate quora: %v", err)
-		}
-		if err := services.pg.Terminate(ctx); err != nil {
-			log.Fatalf("fail terminate pg container: %v", err)
-		}
-
-		if err := services.network.Remove(ctx); err != nil {
-			log.Fatalf("fail remove network: %v", err)
-		}
-	}()
+	defer cleaner()
 
 	scenarios := []scenario{
 		{
@@ -124,29 +113,18 @@ func TestCreateAccount(t *testing.T) {
 
 func TestLogin(t *testing.T) {
 	var (
-		ctx      = context.Background()
-		services = spawnServices(ctx)
-		db, err  = provider.ProvideSQL()
+		ctx               = context.Background()
+		services, cleaner = spawnServices(ctx)
 	)
 
+	db, err := provider.ProvideSQL()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed open connection to pg for testing: %v", err)
 	}
 
+	defer cleaner()
+
 	ImportSQL(db, "../../testdata/account/login.sql")
-
-	defer func() {
-		if err := services.quora.Terminate(ctx); err != nil {
-			log.Fatalf("fail termintate quora: %v", err)
-		}
-		if err := services.pg.Terminate(ctx); err != nil {
-			log.Fatalf("fail terminate pg container: %v", err)
-		}
-
-		if err := services.network.Remove(ctx); err != nil {
-			log.Fatalf("fail remove network: %v", err)
-		}
-	}()
 
 	scenarios := []scenario{
 		{

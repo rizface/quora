@@ -89,7 +89,7 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 	return quora
 }
 
-func spawnServices(ctx context.Context) services {
+func spawnServices(ctx context.Context) (services, func()) {
 	var (
 		pg    testcontainers.Container
 		quora testcontainers.Container
@@ -114,9 +114,22 @@ func spawnServices(ctx context.Context) services {
 		quora = spawnQuora(ctx, pg, networkRequest.Name)
 	}
 
-	return services{
+	svc := services{
 		pg:      pg,
 		quora:   quora,
 		network: network,
+	}
+
+	return svc, func() {
+		if err := svc.quora.Terminate(ctx); err != nil {
+			log.Fatalf("fail termintate quora: %v", err)
+		}
+		if err := svc.pg.Terminate(ctx); err != nil {
+			log.Fatalf("fail terminate pg container: %v", err)
+		}
+
+		if err := svc.network.Remove(ctx); err != nil {
+			log.Fatalf("fail remove network: %v", err)
+		}
 	}
 }
