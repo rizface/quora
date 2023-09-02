@@ -6,22 +6,23 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 	"github.com/google/uuid"
+	"github.com/rizface/quora/nuller"
 )
 
 type QuestionPayload struct {
-	SpaceId  *string `json:"spaceId"`
-	Question string  `json:"question"`
+	SpaceId  nuller.NullString `json:"spaceId"`
+	Question string            `json:"question"`
 }
 
 type QuestionEntity struct {
-	Id        string    `json:"id"`
-	SpaceId   *string   `json:"spaceId"`
-	AuthorId  string    `json:"authorId"`
-	Question  string    `json:"question"`
-	Upvote    int       `json:"upvote"`
-	Downvote  int       `json:"downvote"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	Id        string            `json:"id"`
+	SpaceId   nuller.NullString `json:"spaceId"`
+	AuthorId  string            `json:"authorId"`
+	Question  string            `json:"question"`
+	Upvote    int               `json:"upvote"`
+	Downvote  int               `json:"downvote"`
+	CreatedAt time.Time         `json:"createdAt"`
+	UpdatedAt time.Time         `json:"updatedAt"`
 }
 
 func NewQuestionEntity(p QuestionPayload, authorId string) QuestionEntity {
@@ -38,7 +39,7 @@ func NewQuestionEntity(p QuestionPayload, authorId string) QuestionEntity {
 func (q QuestionEntity) Validate() error {
 	return validation.Errors{
 		"authorId": validation.Validate(q.AuthorId, validation.Required, is.UUID),
-		"spaceId":  validation.Validate(q.SpaceId, is.UUID),
+		"spaceId":  validation.Validate("a53152d7-2d24-42e1-a55f-649e87349ffa", is.UUID),
 		"question": validation.Validate(q.Question, validation.Required),
 	}.Filter()
 }

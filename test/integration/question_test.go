@@ -19,12 +19,16 @@ func TestCreateNewQuestion(t *testing.T) {
 		services, cleaner = spawnServices(ctx)
 	)
 
+	type question struct {
+		id string
+	}
+
 	db, err := provider.ProvideSQL()
 	if err != nil {
 		log.Fatalf("failed provider sql: %v", err)
 	}
 
-	ImportSQL(db, "../../testdata/question/account.sql")
+	ImportSQL(db, "../../testdata/question/integration_test_questions.sql")
 
 	defer cleaner()
 
@@ -38,6 +42,24 @@ func TestCreateNewQuestion(t *testing.T) {
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				assert.Equal(t, http.StatusOK, resp.StatusCode, "must success create one question without spaceId")
 
+				var q question
+
+				err := db.
+					QueryRowContext(ctx, "SELECT id FROM questions WHERE author_id = $1", "f028ac5a-e4c9-442f-bf9a-86c024a79baa").
+					Scan(&q.id)
+
+				assert.Nil(t, err)
+			},
+		},
+		{
+			name: "success create one question with space id",
+			payload: map[string]interface{}{
+				"question": "yoo, this work ?",
+				"spaceId":  "a53152d7-2d24-42e1-a55f-649e87349ffa",
+			},
+			checkExpectation: func(t *testing.T, resp *http.Response) {
+				assert.Equal(t, http.StatusOK, resp.StatusCode, "must success create one question without spaceId")
+
 				type question struct {
 					id string
 				}
@@ -45,7 +67,10 @@ func TestCreateNewQuestion(t *testing.T) {
 				var q question
 
 				err := db.
-					QueryRowContext(ctx, "SELECT id FROM questions WHERE author_id = $1", "f028ac5a-e4c9-442f-bf9a-86c024a79baa").
+					QueryRowContext(ctx,
+						"SELECT id FROM questions WHERE author_id = $1 AND space_id = $2",
+						"f028ac5a-e4c9-442f-bf9a-86c024a79baa", "a53152d7-2d24-42e1-a55f-649e87349ffa",
+					).
 					Scan(&q.id)
 
 				assert.Nil(t, err)

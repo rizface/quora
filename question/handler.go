@@ -33,7 +33,7 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.svc.CreateQuestion(r.Context(), payload)
+	question, err := h.svc.CreateQuestion(r.Context(), payload)
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {
@@ -57,6 +57,7 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	stdres.Writer(w, stdres.Response{
 		Code: http.StatusOK,
+		Data: question,
 		Info: "success",
 	})
 }
