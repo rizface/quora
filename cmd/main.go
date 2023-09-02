@@ -18,6 +18,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/rizface/quora/account"
 	"github.com/rizface/quora/provider"
+	"github.com/rizface/quora/question"
 )
 
 func main() {
@@ -64,19 +65,22 @@ func main() {
 }
 
 type App struct {
-	Deps    *Dependencies
-	Account *account.Feature
+	Deps     *Dependencies
+	Account  *account.Feature
+	Question *question.Feature
 }
 
 func NewApp(d *Dependencies) *App {
 	return &App{
-		Deps:    d,
-		Account: account.NewFeature(d.router, d.sql),
+		Deps:     d,
+		Account:  account.NewFeature(d.router, d.sql),
+		Question: question.NewFeature(d.router, d.sql),
 	}
 }
 
 func (a *App) Start() error {
 	a.Account.RegisterRoutes()
+	a.Question.RegisterRoutes()
 
 	err := a.Deps.server.ListenAndServe()
 

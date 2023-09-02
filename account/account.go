@@ -8,7 +8,6 @@ import (
 
 type Feature struct {
 	Handler *Handler
-	Svc     *Service
 }
 
 func NewFeature(r *chi.Mux, sql *sql.DB) *Feature {
@@ -18,7 +17,6 @@ func NewFeature(r *chi.Mux, sql *sql.DB) *Feature {
 
 	return &Feature{
 		Handler: handler,
-		Svc:     svc,
 	}
 }
 
