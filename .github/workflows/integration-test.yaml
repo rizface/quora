@@ -11,4 +11,4 @@ jobs:
       - name: install golang
         uses: actions/setup-go@v4
       - name: run test
-        run: cd test/integration && go run test -v 
+        run: cd test/integration && go test -v .
