@@ -2,35 +2,20 @@ package integration
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"testing"
 
-	"github.com/rizface/quora/provider"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateNewQuestion(t *testing.T) {
-	var (
-		ctx               = context.Background()
-		services, cleaner = spawnServices(ctx)
-	)
-
+func (suite *IntegrationTestSuite) TestCreateNewQuestion() {
 	type question struct {
 		id string
 	}
 
-	db, err := provider.ProvideSQL()
-	if err != nil {
-		log.Fatalf("failed provider sql: %v", err)
-	}
-
-	ImportSQL(db, "../../testdata/question/integration_test_questions.sql")
-
-	defer cleaner()
+	ImportSQL(suite.db, "../../testdata/question/integration_test_questions.sql")
 
 	scenarios := []scenario{
 		{
@@ -44,8 +29,8 @@ func TestCreateNewQuestion(t *testing.T) {
 
 				var q question
 
-				err := db.
-					QueryRowContext(ctx, "SELECT id FROM questions WHERE author_id = $1", "f028ac5a-e4c9-442f-bf9a-86c024a79baa").
+				err := suite.db.
+					QueryRowContext(suite.ctx, "SELECT id FROM questions WHERE author_id = $1", "f028ac5a-e4c9-442f-bf9a-86c024a79baa").
 					Scan(&q.id)
 
 				assert.Nil(t, err)
@@ -66,8 +51,8 @@ func TestCreateNewQuestion(t *testing.T) {
 
 				var q question
 
-				err := db.
-					QueryRowContext(ctx,
+				err := suite.db.
+					QueryRowContext(suite.ctx,
 						"SELECT id FROM questions WHERE author_id = $1 AND space_id = $2",
 						"f028ac5a-e4c9-442f-bf9a-86c024a79baa", "a53152d7-2d24-42e1-a55f-649e87349ffa",
 					).
@@ -78,11 +63,13 @@ func TestCreateNewQuestion(t *testing.T) {
 		},
 	}
 
+	t := suite.T()
+
 	for _, s := range scenarios {
 		t.Run(s.name, func(t *testing.T) {
 			client := &http.Client{}
 
-			url, err := services.quora.Endpoint(ctx, "")
+			url, err := suite.services.quora.Endpoint(suite.ctx, "")
 			if err != nil {
 				t.Error(err)
 			}

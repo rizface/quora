@@ -2,14 +2,12 @@ package integration
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"testing"
 
-	"github.com/rizface/quora/provider"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,19 +17,7 @@ type scenario struct {
 	checkExpectation func(t *testing.T, resp *http.Response)
 }
 
-func TestCreateAccount(t *testing.T) {
-	var (
-		ctx               = context.Background()
-		services, cleaner = spawnServices(ctx)
-	)
-
-	db, err := provider.ProvideSQL()
-	if err != nil {
-		log.Fatalf("failed open connection to pg: %v", err)
-	}
-
-	defer cleaner()
-
+func (suite *IntegrationTestSuite) TestCreateAccount() {
 	scenarios := []scenario{
 		{
 			name: "success create one employee",
@@ -43,8 +29,8 @@ func TestCreateAccount(t *testing.T) {
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				var counter int
 
-				err := db.
-					QueryRowContext(ctx, `
+				err := suite.db.
+					QueryRowContext(suite.ctx, `
 					SELECT COUNT(id) as count from accounts WHERE username = $1
 				`, "rizface").
 					Scan(&counter)
@@ -80,11 +66,13 @@ func TestCreateAccount(t *testing.T) {
 		},
 	}
 
+	t := suite.T()
+
 	for _, s := range scenarios {
 		t.Run(s.name, func(t *testing.T) {
 			client := &http.Client{}
 
-			url, err := services.quora.Endpoint(ctx, "")
+			url, err := suite.services.quora.Endpoint(suite.ctx, "")
 			if err != nil {
 				t.Error(err)
 			}
@@ -111,20 +99,8 @@ func TestCreateAccount(t *testing.T) {
 	}
 }
 
-func TestLogin(t *testing.T) {
-	var (
-		ctx               = context.Background()
-		services, cleaner = spawnServices(ctx)
-	)
-
-	db, err := provider.ProvideSQL()
-	if err != nil {
-		log.Fatalf("failed open connection to pg for testing: %v", err)
-	}
-
-	defer cleaner()
-
-	ImportSQL(db, "../../testdata/account/login.sql")
+func (suite *IntegrationTestSuite) TestLogin() {
+	ImportSQL(suite.db, "../../testdata/account/login.sql")
 
 	scenarios := []scenario{
 		{
@@ -195,11 +171,13 @@ func TestLogin(t *testing.T) {
 		},
 	}
 
+	t := suite.T()
+
 	for _, s := range scenarios {
 		t.Run(s.name, func(t *testing.T) {
 			client := &http.Client{}
 
-			url, err := services.quora.Endpoint(ctx, "")
+			url, err := suite.services.quora.Endpoint(suite.ctx, "")
 			if err != nil {
 				t.Error(err)
 			}
