@@ -21,7 +21,7 @@ func spawnPg(ctx context.Context, network string) testcontainers.Container {
 		Image:        "postgres:15",
 		ExposedPorts: []string{"5432/tcp"},
 		Networks:     []string{network},
-		WaitingFor:   wait.ForLog("database system is ready to accept connections"),
+		WaitingFor:   wait.ForListeningPort("5432"),
 		Env: map[string]string{
 			"POSTGRES_USER":     "pgquora",
 			"POSTGRES_PASSWORD": "pgquora",
@@ -75,7 +75,7 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 			"JWT_ACCESS_SECRET":  uuid.NewString(),
 			"JWT_REFRESH_SECRET": uuid.NewString(),
 		},
-		WaitingFor: wait.ForLog("success run migrations"),
+		WaitingFor: wait.ForExposedPort(),
 	}
 
 	quora, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
