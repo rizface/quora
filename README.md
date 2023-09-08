@@ -17,3 +17,4 @@ and implement other learned skills, like:
 - PostgreSQL -> Main Database
 - Redis -> Cache Database
 - Docker -> Containerization
+- Integration Test -> Test Container

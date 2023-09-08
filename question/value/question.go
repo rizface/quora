@@ -14,6 +14,11 @@ type QuestionPayload struct {
 	Question string            `json:"question"`
 }
 
+type Author struct {
+	Id       string `json:"id"`
+	Username string `json:"username"`
+}
+
 type QuestionEntity struct {
 	Id        string            `json:"id"`
 	SpaceId   nuller.NullString `json:"spaceId"`
@@ -21,6 +26,7 @@ type QuestionEntity struct {
 	Question  string            `json:"question"`
 	Upvote    int               `json:"upvote"`
 	Downvote  int               `json:"downvote"`
+	Author    Author            `json:"author"`
 	CreatedAt time.Time         `json:"createdAt"`
 	UpdatedAt time.Time         `json:"updatedAt"`
 }

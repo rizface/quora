@@ -32,3 +32,11 @@ func (s *Service) CreateQuestion(ctx context.Context, q value.QuestionPayload) (
 
 	return question, nil
 }
+
+func (s *Service) GetQuestions(ctx context.Context, q value.QuestionQuery) ([]value.QuestionEntity, error) {
+	if err := value.ValidateQuestionQueery(q); err != nil {
+		return []value.QuestionEntity{}, err
+	}
+
+	return s.repo.GetList(ctx, q)
+}

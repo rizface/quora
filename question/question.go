@@ -25,5 +25,6 @@ func NewFeature(r *chi.Mux, db *sql.DB) *Feature {
 func (q *Feature) RegisterRoutes() {
 	q.r.Route("/questions", func(r chi.Router) {
 		r.Post("/", q.handler.CreateQuestion)
+		r.Get("/", q.handler.GetQuestion)
 	})
 }

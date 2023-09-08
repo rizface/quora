@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/rizface/quora/question/value"
@@ -59,5 +60,56 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		Code: http.StatusOK,
 		Data: question,
 		Info: "success",
+	})
+}
+
+func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
+	// parse query param (limit and skip)
+	urlQuery, err := url.ParseQuery(r.URL.RawQuery)
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "failed parse url query",
+		})
+
+		return
+	}
+
+	query, err := value.NewQuestionQuery(urlQuery)
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "invalid query parameter",
+		})
+
+		return
+	}
+
+	questions, err := h.svc.GetQuestions(r.Context(), query)
+
+	vErr := validation.Errors{}
+	if errors.As(err, &vErr) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "validation error",
+			Data: vErr,
+		})
+
+		return
+	}
+
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusInternalServerError,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	stdres.Writer(w, stdres.Response{
+		Code: http.StatusOK,
+		Info: "success",
+		Data: questions,
 	})
 }
