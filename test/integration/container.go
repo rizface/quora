@@ -61,11 +61,6 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 		log.Fatalf("failed get pgC ip: %v", err)
 	}
 
-	// path, err := filepath.Abs("../../")
-	// if err != nil {
-	// 	log.Fatalf("failed get absolute path: %v", err)
-	// }
-
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
 			Context:    "../../",
@@ -84,9 +79,6 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 			"JWT_REFRESH_SECRET": uuid.NewString(),
 		},
 		WaitingFor: wait.ForListeningPort("3000"),
-		LifecycleHooks: []testcontainers.ContainerLifecycleHooks{
-			testcontainers.DefaultLoggingHook(os.Stdout),
-		},
 	}
 
 	quora, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
