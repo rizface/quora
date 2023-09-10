@@ -32,8 +32,8 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 	var (
 		questions = []value.QuestionEntity{}
 		query     = `
-		SELECT id, author_id, question, upvote, downvote, created_at, updated_at FROM questions LIMIT $1 OFFSET $2
-	`
+			SELECT id, author_id, question, upvote, downvote, created_at, updated_at FROM questions LIMIT $1 OFFSET $2
+		`
 	)
 
 	rows, err := r.db.QueryContext(ctx, query, q.Limit, q.Skip)
@@ -97,4 +97,46 @@ func (r *Repository) GetTotalQuestions(ctx context.Context) (int, error) {
 	}
 
 	return total, nil
+}
+
+func (r *Repository) GetOne(ctx context.Context, questionId string) (value.QuestionEntity, error) {
+	var (
+		question value.QuestionEntity
+		query    = `
+			SELECT id, author_id, question, upvote, downvote, created_at, updated_at FROM questions WHERE id = $1
+		`
+	)
+
+	err := r.db.
+		QueryRowContext(ctx, query, questionId).
+		Scan(
+			&question.Id,
+			&question.AuthorId,
+			&question.Question,
+			&question.Upvote,
+			&question.Downvote,
+			&question.CreatedAt,
+			&question.UpdatedAt,
+		)
+	if errors.Is(err, sql.ErrNoRows) {
+		return value.QuestionEntity{}, ErrQuestionNotFound
+	}
+
+	if err != nil {
+		return value.QuestionEntity{}, err
+	}
+
+	return question, nil
+}
+
+func (r *Repository) Vote(ctx context.Context, q value.QuestionEntity) error {
+	command := `
+		UPDATE questions SET upvote = $1, downvote = $2, updated_at = $3 WHERE id = $4
+	`
+
+	if _, err := r.db.ExecContext(ctx, command, q.Upvote, q.Downvote, q.UpdatedAt, q.Id); err != nil {
+		return err
+	}
+
+	return nil
 }

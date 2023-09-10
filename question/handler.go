@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/go-chi/chi/v5"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/rizface/quora/question/value"
 	"github.com/rizface/quora/stdres"
@@ -115,6 +116,62 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 		Data: map[string]interface{}{
 			"docs":  result.Questions,
 			"total": result.Total,
+		},
+	})
+}
+
+func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
+	vote := value.VotePayload{
+		QuestionId: chi.URLParam(r, "questionId"),
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&vote); err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "failed parse payload",
+		})
+
+		return
+	}
+
+	question, err := h.svc.Vote(r.Context(), vote)
+
+	vErr := validation.Errors{}
+	if errors.As(err, &vErr) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Data: map[string]interface{}{
+				"doc": vErr,
+			},
+			Info: "validation error",
+		})
+
+		return
+	}
+
+	if errors.Is(err, ErrQuestionNotFound) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusNotFound,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusInternalServerError,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	stdres.Writer(w, stdres.Response{
+		Code: http.StatusOK,
+		Info: "success",
+		Data: map[string]interface{}{
+			"doc": question,
 		},
 	})
 }

@@ -1,6 +1,7 @@
 package value
 
 import (
+	"strings"
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -53,4 +54,16 @@ func (q QuestionEntity) Validate() error {
 		"spaceId":  validation.Validate("a53152d7-2d24-42e1-a55f-649e87349ffa", is.UUID),
 		"question": validation.Validate(q.Question, validation.Required),
 	}.Filter()
+}
+
+func (q *QuestionEntity) Vote(vote Vote) {
+	if strings.EqualFold(vote.Type, upvote) {
+		q.Upvote++
+	}
+
+	if strings.EqualFold(vote.Type, downvote) {
+		q.Downvote++
+	}
+
+	q.UpdatedAt = time.Now()
 }
