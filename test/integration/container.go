@@ -75,7 +75,7 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 			"JWT_ACCESS_SECRET":  uuid.NewString(),
 			"JWT_REFRESH_SECRET": uuid.NewString(),
 		},
-		WaitingFor: wait.ForExposedPort(),
+		WaitingFor: wait.ForListeningPort("3000"),
 	}
 
 	quora, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
