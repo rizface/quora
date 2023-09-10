@@ -58,7 +58,9 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 
 	stdres.Writer(w, stdres.Response{
 		Code: http.StatusOK,
-		Data: question,
+		Data: map[string]interface{}{
+			"doc": question,
+		},
 		Info: "success",
 	})
 }
@@ -85,7 +87,7 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	questions, err := h.svc.GetQuestions(r.Context(), query)
+	result, err := h.svc.GetQuestions(r.Context(), query)
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {
@@ -110,6 +112,9 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 	stdres.Writer(w, stdres.Response{
 		Code: http.StatusOK,
 		Info: "success",
-		Data: questions,
+		Data: map[string]interface{}{
+			"docs":  result.Questions,
+			"total": result.Total,
+		},
 	})
 }

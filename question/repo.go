@@ -83,3 +83,18 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 
 	return questions, nil
 }
+
+func (r *Repository) GetTotalQuestions(ctx context.Context) (int, error) {
+	var (
+		total int
+		query = `
+			SELECT COUNT(*) FROM questions
+		`
+	)
+
+	if err := r.db.QueryRowContext(ctx, query).Scan(&total); err != nil {
+		return total, err
+	}
+
+	return total, nil
+}

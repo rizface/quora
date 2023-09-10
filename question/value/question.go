@@ -31,6 +31,11 @@ type QuestionEntity struct {
 	UpdatedAt time.Time         `json:"updatedAt"`
 }
 
+type Aggregate struct {
+	Questions []QuestionEntity
+	Total     int
+}
+
 func NewQuestionEntity(p QuestionPayload, authorId string) QuestionEntity {
 	return QuestionEntity{
 		Id:        uuid.NewString(),

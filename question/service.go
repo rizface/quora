@@ -33,10 +33,23 @@ func (s *Service) CreateQuestion(ctx context.Context, q value.QuestionPayload) (
 	return question, nil
 }
 
-func (s *Service) GetQuestions(ctx context.Context, q value.QuestionQuery) ([]value.QuestionEntity, error) {
+func (s *Service) GetQuestions(ctx context.Context, q value.QuestionQuery) (value.Aggregate, error) {
 	if err := value.ValidateQuestionQueery(q); err != nil {
-		return []value.QuestionEntity{}, err
+		return value.Aggregate{}, err
 	}
 
-	return s.repo.GetList(ctx, q)
+	questions, err := s.repo.GetList(ctx, q)
+	if err != nil {
+		return value.Aggregate{}, err
+	}
+
+	totalQuestions, err := s.repo.GetTotalQuestions(ctx)
+	if err != nil {
+		return value.Aggregate{}, nil
+	}
+
+	return value.Aggregate{
+		Questions: questions,
+		Total:     totalQuestions,
+	}, nil
 }
