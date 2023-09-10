@@ -6,8 +6,6 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: build image
-        run: docker build --tag quora:local --file build/dockerfile.dev .
       - name: install golang
         uses: actions/setup-go@v4
       - name: run test
