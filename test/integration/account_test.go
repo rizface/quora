@@ -91,6 +91,7 @@ func (suite *IntegrationTestSuite) TestCreateAccount() {
 			if err != nil {
 				t.Error(err)
 			}
+			defer resp.Body.Close()
 
 			if s.checkExpectation != nil {
 				s.checkExpectation(t, resp)
@@ -196,6 +197,7 @@ func (suite *IntegrationTestSuite) TestLogin() {
 			if err != nil {
 				t.Error(err)
 			}
+			defer resp.Body.Close()
 
 			if s.checkExpectation != nil {
 				s.checkExpectation(t, resp)

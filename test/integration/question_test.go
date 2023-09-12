@@ -88,6 +88,7 @@ func (suite *IntegrationTestSuite) TestCreateNewQuestion() {
 			if err != nil {
 				t.Error(err)
 			}
+			defer resp.Body.Close()
 
 			if s.checkExpectation != nil {
 				s.checkExpectation(t, resp)
@@ -273,6 +274,7 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 			if err != nil {
 				t.Error(err)
 			}
+			defer resp.Body.Close()
 
 			if s.checkExpectation != nil {
 				s.checkExpectation(t, resp)
