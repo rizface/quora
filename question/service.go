@@ -2,17 +2,20 @@ package question
 
 import (
 	"context"
+	"errors"
 
 	"github.com/rizface/quora/question/value"
 )
 
 type Service struct {
-	repo *Repository
+	repo     *Repository
+	voteRepo *VoteRepo
 }
 
-func NewService(repo *Repository) *Service {
+func NewService(repo *Repository, voteRepo *VoteRepo) *Service {
 	return &Service{
-		repo: repo,
+		repo:     repo,
+		voteRepo: voteRepo,
 	}
 }
 
@@ -69,11 +72,26 @@ func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.Question
 		return value.QuestionEntity{}, err
 	}
 
-	// TODO: check if voter already vote the question
+	oldVote, err := s.voteRepo.GetOldVote(ctx, vote)
+	if err != nil && !errors.Is(err, ErrVoteNotFound) {
+		return value.QuestionEntity{}, err
+	}
 
-	question.Vote(vote)
+	// assume if client spam upvote/downvote button
+	if vote.Type == oldVote.Type {
+		return question, nil
+	}
 
-	if err := s.repo.Vote(ctx, question); err != nil {
+	question.Vote(vote, oldVote)
+
+	// delete the old vote if the voter had voted the question before
+	if oldVote.Type != "" {
+		if err := s.voteRepo.DeleteVote(ctx, oldVote); err != nil {
+			return value.QuestionEntity{}, err
+		}
+	}
+
+	if err := s.repo.Vote(ctx, question, vote); err != nil {
 		return value.QuestionEntity{}, err
 	}
 

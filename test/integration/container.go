@@ -63,8 +63,9 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 
 	req := testcontainers.ContainerRequest{
 		FromDockerfile: testcontainers.FromDockerfile{
-			Context:    "../../",
-			Dockerfile: "build/dockerfile.dev",
+			Context:       "../../",
+			Dockerfile:    "build/dockerfile.dev",
+			PrintBuildLog: true,
 		},
 		ExposedPorts: []string{"3000"},
 		Networks:     []string{network},

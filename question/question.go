@@ -12,9 +12,12 @@ type Feature struct {
 }
 
 func NewFeature(r *chi.Mux, db *sql.DB) *Feature {
-	repo := NewRepository(db)
-	svc := NewService(repo)
-	handler := NewHandler(svc)
+	var (
+		questionRepo = NewRepository(db)
+		voteRepo     = NewVoteRepository(db)
+		svc          = NewService(questionRepo, voteRepo)
+		handler      = NewHandler(svc)
+	)
 
 	return &Feature{
 		handler: handler,

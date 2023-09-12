@@ -1,6 +1,8 @@
 package value
 
 import (
+	"time"
+
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
 )
@@ -19,6 +21,8 @@ type Vote struct {
 	QuestionId string
 	Type       string
 	VoterId    string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 func NewVote(p VotePayload, voterId string) Vote {

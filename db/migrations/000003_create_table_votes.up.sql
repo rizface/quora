@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS votes(
+    voter_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    "type" VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(voter_id, question_id, "type")
+)

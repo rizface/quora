@@ -56,13 +56,21 @@ func (q QuestionEntity) Validate() error {
 	}.Filter()
 }
 
-func (q *QuestionEntity) Vote(vote Vote) {
+func (q *QuestionEntity) Vote(vote Vote, oldVote Vote) {
 	if strings.EqualFold(vote.Type, upvote) {
 		q.Upvote++
+
+		if strings.EqualFold(oldVote.Type, downvote) {
+			q.Downvote--
+		}
 	}
 
 	if strings.EqualFold(vote.Type, downvote) {
 		q.Downvote++
+
+		if strings.EqualFold(oldVote.Type, upvote) {
+			q.Upvote--
+		}
 	}
 
 	q.UpdatedAt = time.Now()
