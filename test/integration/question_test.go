@@ -101,6 +101,7 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 		name             string
 		questionId       string
 		voteType         string
+		checPreTest      func(t *testing.T)
 		checkExpectation func(t *testing.T, resp *http.Response)
 	}
 
@@ -122,11 +123,11 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 				var (
 					question = question{}
 					query    = `
-						select upvote from questions limit 1
+						select upvote from questions where id = $1
 					`
 				)
 
-				err := suite.db.QueryRowContext(suite.ctx, query).Scan(&question.upvote)
+				err := suite.db.QueryRowContext(suite.ctx, query, "4b9ef364-0d6a-4f60-a169-39b1d076c65d").Scan(&question.upvote)
 				if err != nil {
 					t.Error(err)
 				}
@@ -136,7 +137,7 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 		},
 		{
 			name:       "success downvote one question",
-			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65d",
+			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65f",
 			voteType:   "downvote",
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -144,11 +145,11 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 				var (
 					question = question{}
 					query    = `
-						select downvote from questions limit 1
+						select downvote from questions where id = $1
 					`
 				)
 
-				err := suite.db.QueryRowContext(suite.ctx, query).Scan(&question.downvote)
+				err := suite.db.QueryRowContext(suite.ctx, query, "4b9ef364-0d6a-4f60-a169-39b1d076c65f").Scan(&question.downvote)
 				if err != nil {
 					t.Error(err)
 				}
@@ -172,12 +173,83 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 			},
 		},
+		{
+			name:       "spam upvote or downvote must be ignored",
+			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65e",
+			voteType:   "upvote",
+			checkExpectation: func(t *testing.T, resp *http.Response) {
+				assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+				var (
+					question = question{}
+					query    = `
+						select upvote from questions where id = $1
+					`
+				)
+
+				err := suite.db.QueryRowContext(suite.ctx, query, "4b9ef364-0d6a-4f60-a169-39b1d076c65e").Scan(&question.upvote)
+				if err != nil {
+					t.Error(err)
+				}
+
+				assert.Equal(t, 1, question.upvote)
+			},
+		},
+		{
+			name:       "existing vote must be deleted if client send the opposite vote",
+			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65b",
+			voteType:   "upvote",
+			checPreTest: func(t *testing.T) {
+				var (
+					question = question{}
+					query    = `
+						select upvote, downvote from questions where id = $1
+					`
+				)
+
+				err := suite.db.QueryRowContext(suite.ctx, query, "4b9ef364-0d6a-4f60-a169-39b1d076c65b").Scan(
+					&question.upvote,
+					&question.downvote,
+				)
+				if err != nil {
+					t.Error(err)
+				}
+
+				assert.Equal(t, 0, question.upvote, "upvote must be 0 before re-vote the question")
+				assert.Equal(t, 1, question.downvote, "downvote must be 1 before re-vote the question")
+			},
+			checkExpectation: func(t *testing.T, resp *http.Response) {
+				assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+				var (
+					question = question{}
+					query    = `
+						select upvote,downvote from questions where id = $1
+					`
+				)
+
+				err := suite.db.QueryRowContext(suite.ctx, query, "4b9ef364-0d6a-4f60-a169-39b1d076c65b").Scan(
+					&question.upvote,
+					&question.downvote,
+				)
+				if err != nil {
+					t.Error(err)
+				}
+
+				assert.Equal(t, 1, question.upvote, "upvote must be 1 after re-vote the question")
+				assert.Equal(t, 0, question.downvote, "downvote must be 0 after re-vote the question")
+			},
+		},
 	}
 
 	t := suite.T()
 
 	for _, s := range scenarios {
 		t.Run(s.name, func(t *testing.T) {
+			if s.checPreTest != nil {
+				s.checPreTest(t)
+			}
+
 			client := &http.Client{}
 
 			url, err := suite.services.quora.Endpoint(suite.ctx, "")
