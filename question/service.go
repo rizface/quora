@@ -7,10 +7,17 @@ import (
 	"github.com/rizface/quora/question/value"
 )
 
-type Service struct {
-	repo     *Repository
-	voteRepo *VoteRepo
-}
+type (
+	Service struct {
+		repo     *Repository
+		voteRepo *VoteRepo
+	}
+
+	AnwerQuestionRequest struct {
+		questionId string
+		value.AnswerPayload
+	}
+)
 
 func NewService(repo *Repository, voteRepo *VoteRepo) *Service {
 	return &Service{
@@ -96,4 +103,14 @@ func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.Question
 	}
 
 	return question, nil
+}
+
+func (s *Service) Answer(ctx context.Context, aq AnwerQuestionRequest) (value.Answer, error) {
+	answer := value.NewAnswer(aq.questionId, aq.AnswerPayload)
+
+	if err := value.ValidateAnswer(answer); err != nil {
+		return value.Answer{}, err
+	}
+
+	return value.Answer{}, nil
 }

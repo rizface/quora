@@ -41,7 +41,7 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 	if errors.As(err, &vErr) {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusBadRequest,
-			Data: vErr,
+			Data: map[string]interface{}{"doc": vErr},
 			Info: "validation error",
 		})
 
@@ -95,7 +95,7 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusBadRequest,
 			Info: "validation error",
-			Data: vErr,
+			Data: map[string]interface{}{"doc": vErr},
 		})
 
 		return
@@ -174,4 +174,35 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 			"doc": question,
 		},
 	})
+}
+
+func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
+	var (
+		payload    value.AnswerPayload
+		questionId = chi.URLParam(r, "questionId")
+	)
+
+	_, err := h.svc.Answer(r.Context(), AnwerQuestionRequest{
+		questionId:    questionId,
+		AnswerPayload: payload,
+	})
+
+	vErr := validation.Errors{}
+	if errors.As(err, &vErr) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Data: map[string]interface{}{"doc": vErr},
+		})
+
+		return
+	}
+
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusInternalServerError,
+			Info: err.Error(),
+		})
+
+		return
+	}
 }
