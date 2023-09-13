@@ -9,8 +9,9 @@ import (
 
 type (
 	Service struct {
-		repo     *Repository
-		voteRepo *VoteRepo
+		repo       *Repository
+		voteRepo   *VoteRepo
+		answerRepo *AnswerRepo
 	}
 
 	AnwerQuestionRequest struct {
@@ -19,10 +20,11 @@ type (
 	}
 )
 
-func NewService(repo *Repository, voteRepo *VoteRepo) *Service {
+func NewService(repo *Repository, voteRepo *VoteRepo, answerRepo *AnswerRepo) *Service {
 	return &Service{
-		repo:     repo,
-		voteRepo: voteRepo,
+		repo:       repo,
+		voteRepo:   voteRepo,
+		answerRepo: answerRepo,
 	}
 }
 
@@ -106,11 +108,31 @@ func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.Question
 }
 
 func (s *Service) Answer(ctx context.Context, aq AnwerQuestionRequest) (value.Answer, error) {
-	answer := value.NewAnswer(aq.questionId, aq.AnswerPayload)
+	var (
+		answererId = "f028ac5a-e4c9-442f-bf9a-86c024a79baa" //TODO: update this line using current logged in user
+		answer     = value.NewAnswer(value.NewAnswerParam{
+			QuestionId: aq.questionId,
+			Answer:     aq.Answer,
+			AnswererId: answererId,
+		})
+	)
 
 	if err := value.ValidateAnswer(answer); err != nil {
 		return value.Answer{}, err
 	}
 
-	return value.Answer{}, nil
+	question, err := s.repo.GetOne(ctx, answer.QuestionId)
+	if err != nil {
+		return value.Answer{}, err
+	}
+
+	answer, err = s.answerRepo.Create(ctx, CreateAnswerReq{
+		answer:   answer,
+		question: question,
+	})
+	if err != nil {
+		return value.Answer{}, err
+	}
+
+	return answer, nil
 }

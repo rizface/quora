@@ -5,23 +5,38 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
+	"github.com/google/uuid"
 )
 
-type AnswerPayload struct {
-	Answer string `json:"answer"`
-}
+type (
+	AnswerPayload struct {
+		Answer string `json:"answer"`
+	}
 
-type Answer struct {
-	QuestionId string    `json:"questionId"`
-	Answer     string    `json:"answer"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
-}
+	Answer struct {
+		Id         string    `json:"id"`
+		QuestionId string    `json:"questionId"`
+		Answer     string    `json:"answer"`
+		AnswererId string    `json:"answererId"`
+		CreatedAt  time.Time `json:"created_at"`
+		UpdatedAt  time.Time `json:"updated_at"`
+	}
 
-func NewAnswer(questionId string, p AnswerPayload) Answer {
+	NewAnswerParam struct {
+		QuestionId string
+		Answer     string
+		AnswererId string
+	}
+)
+
+func NewAnswer(p NewAnswerParam) Answer {
 	return Answer{
-		QuestionId: questionId,
-		Answer:     p.Answer,
+		Id:         uuid.NewString(),
+		QuestionId: p.QuestionId,
+		Answer:     p.AnswererId,
+		AnswererId: p.AnswererId,
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
 }
 

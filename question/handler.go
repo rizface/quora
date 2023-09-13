@@ -182,7 +182,7 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 		questionId = chi.URLParam(r, "questionId")
 	)
 
-	_, err := h.svc.Answer(r.Context(), AnwerQuestionRequest{
+	answer, err := h.svc.Answer(r.Context(), AnwerQuestionRequest{
 		questionId:    questionId,
 		AnswerPayload: payload,
 	})
@@ -197,6 +197,15 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if errors.Is(err, ErrQuestionNotFound) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusNotFound,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusInternalServerError,
@@ -205,4 +214,10 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+
+	stdres.Writer(w, stdres.Response{
+		Code: http.StatusOK,
+		Info: "success",
+		Data: map[string]interface{}{"doc": answer},
+	})
 }

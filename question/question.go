@@ -15,7 +15,8 @@ func NewFeature(r *chi.Mux, db *sql.DB) *Feature {
 	var (
 		questionRepo = NewRepository(db)
 		voteRepo     = NewVoteRepository(db)
-		svc          = NewService(questionRepo, voteRepo)
+		answerRepo   = NewAnswerRepo(db)
+		svc          = NewService(questionRepo, voteRepo, answerRepo)
 		handler      = NewHandler(svc)
 	)
 
