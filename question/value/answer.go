@@ -10,7 +10,8 @@ import (
 
 type (
 	AnswerPayload struct {
-		Answer string `json:"answer"`
+		Answer     string `json:"answer"`
+		QuestionId string `json:"questionId"`
 	}
 
 	Answer struct {
@@ -18,13 +19,14 @@ type (
 		QuestionId string    `json:"questionId"`
 		Answer     string    `json:"answer"`
 		AnswererId string    `json:"answererId"`
+		Upvote     int       `json:"upvote"`
+		Downvote   int       `json:"downvote"`
 		CreatedAt  time.Time `json:"created_at"`
 		UpdatedAt  time.Time `json:"updated_at"`
 	}
 
 	NewAnswerParam struct {
-		QuestionId string
-		Answer     string
+		AnswerPayload
 		AnswererId string
 	}
 )
@@ -33,7 +35,7 @@ func NewAnswer(p NewAnswerParam) Answer {
 	return Answer{
 		Id:         uuid.NewString(),
 		QuestionId: p.QuestionId,
-		Answer:     p.AnswererId,
+		Answer:     p.Answer,
 		AnswererId: p.AnswererId,
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),

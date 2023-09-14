@@ -178,14 +178,17 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 	var (
-		payload    value.AnswerPayload
-		questionId = chi.URLParam(r, "questionId")
+		payload value.AnswerPayload
 	)
 
-	answer, err := h.svc.Answer(r.Context(), AnwerQuestionRequest{
-		questionId:    questionId,
-		AnswerPayload: payload,
-	})
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "failed decode answer payload",
+		})
+	}
+
+	answer, err := h.svc.Answer(r.Context(), payload)
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {

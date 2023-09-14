@@ -15,7 +15,6 @@ type (
 	}
 
 	AnwerQuestionRequest struct {
-		questionId string
 		value.AnswerPayload
 	}
 )
@@ -107,13 +106,12 @@ func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.Question
 	return question, nil
 }
 
-func (s *Service) Answer(ctx context.Context, aq AnwerQuestionRequest) (value.Answer, error) {
+func (s *Service) Answer(ctx context.Context, p value.AnswerPayload) (value.Answer, error) {
 	var (
 		answererId = "f028ac5a-e4c9-442f-bf9a-86c024a79baa" //TODO: update this line using current logged in user
 		answer     = value.NewAnswer(value.NewAnswerParam{
-			QuestionId: aq.questionId,
-			Answer:     aq.Answer,
-			AnswererId: answererId,
+			AnswerPayload: p,
+			AnswererId:    answererId,
 		})
 	)
 

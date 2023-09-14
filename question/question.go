@@ -31,6 +31,6 @@ func (q *Feature) RegisterRoutes() {
 		r.Post("/", q.handler.CreateQuestion)
 		r.Patch("/{questionId}/vote", q.handler.Vote)
 		r.Get("/", q.handler.GetQuestion)
-		r.Post("/{questionId}/answer", q.handler.AnswerQuestion)
+		r.Post("/answers", q.handler.AnswerQuestion)
 	})
 }
