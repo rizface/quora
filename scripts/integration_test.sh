@@ -1,1 +1,1 @@
-go clean -testcache && docker build --file build/dockerfile.dev --tag quora:local . && go test -v ./test/integration
+go clean -testcache && docker build --file build/dockerfile.dev --tag quora:local . && go test -v ./test/integration --run=$*

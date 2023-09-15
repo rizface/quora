@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/rizface/quora/question/value"
 )
@@ -128,47 +127,4 @@ func (r *Repository) GetOne(ctx context.Context, questionId string) (value.Quest
 	}
 
 	return question, nil
-}
-
-func (r *Repository) Vote(ctx context.Context, q value.QuestionEntity, v value.Vote) error {
-	tx, err := r.db.Begin()
-
-	defer func(err error) {
-		if err != nil {
-			if err := tx.Rollback(); err != nil {
-				log.Println(err)
-			}
-
-			return
-		}
-
-		if err := tx.Commit(); err != nil {
-			log.Println(err)
-
-			return
-		}
-	}(err)
-
-	if err != nil {
-		return err
-	}
-
-	command := `
-		UPDATE questions SET upvote = $1, downvote = $2, updated_at = $3 WHERE id = $4
-	`
-
-	if _, err := tx.ExecContext(ctx, command, q.Upvote, q.Downvote, q.UpdatedAt, q.Id); err != nil {
-		return err
-	}
-
-	command = `
-		INSERT INTO votes (voter_id, question_id, "type") VALUES ($1, $2, $3)
-	`
-
-	if _, err := tx.ExecContext(ctx, command, v.VoterId, v.QuestionId, v.Type); err != nil {
-		log.Println(err)
-		return err
-	}
-
-	return nil
 }

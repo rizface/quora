@@ -13,29 +13,29 @@ const (
 )
 
 type VotePayload struct {
-	QuestionId string
-	Type       string // upvote / downvote
+	AnswerId string
+	Type     string // upvote / downvote
 }
 
 type Vote struct {
-	QuestionId string
-	Type       string
-	VoterId    string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	AnswerId  string
+	Type      string
+	VoterId   string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func NewVote(p VotePayload, voterId string) Vote {
 	return Vote{
-		QuestionId: p.QuestionId,
-		Type:       p.Type,
-		VoterId:    voterId,
+		AnswerId: p.AnswerId,
+		Type:     p.Type,
+		VoterId:  voterId,
 	}
 }
 
 func ValidateVote(v Vote) error {
 	return validation.Errors{
-		"type":       validation.Validate(v.Type, validation.Required, validation.In(upvote, downvote)),
-		"questionId": validation.Validate(v.QuestionId, validation.Required, is.UUID),
+		"type":     validation.Validate(v.Type, validation.Required, validation.In(upvote, downvote)),
+		"answerId": validation.Validate(v.AnswerId, validation.Required, is.UUID),
 	}.Filter()
 }

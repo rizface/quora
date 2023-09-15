@@ -65,45 +65,45 @@ func (s *Service) GetQuestions(ctx context.Context, q value.QuestionQuery) (valu
 	}, nil
 }
 
-func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.QuestionEntity, error) {
+func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.Answer, error) {
 	var (
 		voterId = "f028ac5a-e4c9-442f-bf9a-86c024a79baa" //TODO: update this line using current logged in user
 		vote    = value.NewVote(p, voterId)
 	)
 
 	if err := value.ValidateVote(vote); err != nil {
-		return value.QuestionEntity{}, err
+		return value.Answer{}, err
 	}
 
-	question, err := s.repo.GetOne(ctx, vote.QuestionId)
+	answer, err := s.answerRepo.GetOne(ctx, vote.AnswerId)
 	if err != nil {
-		return value.QuestionEntity{}, err
+		return value.Answer{}, err
 	}
 
 	oldVote, err := s.voteRepo.GetOldVote(ctx, vote)
 	if err != nil && !errors.Is(err, ErrVoteNotFound) {
-		return value.QuestionEntity{}, err
+		return value.Answer{}, err
 	}
 
 	// assume if client spam upvote/downvote button
 	if vote.Type == oldVote.Type {
-		return question, nil
+		return answer, nil
 	}
 
-	question.Vote(vote, oldVote)
+	answer.Vote(vote, oldVote)
 
 	// delete the old vote if the voter had voted the question before
 	if oldVote.Type != "" {
 		if err := s.voteRepo.DeleteVote(ctx, oldVote); err != nil {
-			return value.QuestionEntity{}, err
+			return value.Answer{}, err
 		}
 	}
 
-	if err := s.repo.Vote(ctx, question, vote); err != nil {
-		return value.QuestionEntity{}, err
+	if err := s.answerRepo.Vote(ctx, answer, vote); err != nil {
+		return value.Answer{}, err
 	}
 
-	return question, nil
+	return answer, nil
 }
 
 func (s *Service) Answer(ctx context.Context, p value.AnswerPayload) (value.Answer, error) {

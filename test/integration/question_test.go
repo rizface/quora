@@ -100,13 +100,13 @@ func (suite *IntegrationTestSuite) TestCreateNewQuestion() {
 func (suite *IntegrationTestSuite) TestVoteQuestion() {
 	type scenario struct {
 		name             string
-		questionId       string
+		answerId         string
 		voteType         string
 		checPreTest      func(t *testing.T)
 		checkExpectation func(t *testing.T, resp *http.Response)
 	}
 
-	type question struct {
+	type answer struct {
 		upvote   int
 		downvote int
 	}
@@ -115,16 +115,16 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 
 	scenarios := []scenario{
 		{
-			name:       "success upvote one question",
-			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65d",
-			voteType:   "upvote",
+			name:     "success upvote one answer",
+			answerId: "4b9ef364-0d6a-4f60-a169-39b1d076c65d",
+			voteType: "upvote",
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 				var (
-					question = question{}
+					question = answer{}
 					query    = `
-						select upvote from questions where id = $1
+						select upvote from answers where id = $1
 					`
 				)
 
@@ -137,16 +137,16 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 			},
 		},
 		{
-			name:       "success downvote one question",
-			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65f",
-			voteType:   "downvote",
+			name:     "success downvote one question",
+			answerId: "4b9ef364-0d6a-4f60-a169-39b1d076c65f",
+			voteType: "downvote",
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 				var (
-					question = question{}
+					question = answer{}
 					query    = `
-						select downvote from questions where id = $1
+						select downvote from answers where id = $1
 					`
 				)
 
@@ -159,32 +159,32 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 			},
 		},
 		{
-			name:       "invalid vote type",
-			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65d",
-			voteType:   "invalidvote",
+			name:     "invalid vote type",
+			answerId: "4b9ef364-0d6a-4f60-a169-39b1d076c65d",
+			voteType: "invalidvote",
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 			},
 		},
 		{
-			name:       "question not found",
-			questionId: "a53152d7-2d24-42e1-a55f-649e87349ffa",
-			voteType:   "upvote",
+			name:     "answer not found",
+			answerId: "a53152d7-2d24-42e1-a55f-649e87349ffa",
+			voteType: "upvote",
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				assert.Equal(t, http.StatusNotFound, resp.StatusCode)
 			},
 		},
 		{
-			name:       "spam upvote or downvote must be ignored",
-			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65e",
-			voteType:   "upvote",
+			name:     "spam upvote or downvote must be ignored",
+			answerId: "4b9ef364-0d6a-4f60-a169-39b1d076c65e",
+			voteType: "upvote",
 			checkExpectation: func(t *testing.T, resp *http.Response) {
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 				var (
-					question = question{}
+					question = answer{}
 					query    = `
-						select upvote from questions where id = $1
+						select upvote from answers where id = $1
 					`
 				)
 
@@ -197,14 +197,14 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 			},
 		},
 		{
-			name:       "existing vote must be deleted if client send the opposite vote",
-			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65b",
-			voteType:   "upvote",
+			name:     "existing vote must be deleted if client send the opposite vote",
+			answerId: "4b9ef364-0d6a-4f60-a169-39b1d076c65b",
+			voteType: "upvote",
 			checPreTest: func(t *testing.T) {
 				var (
-					question = question{}
+					question = answer{}
 					query    = `
-						select upvote, downvote from questions where id = $1
+						select upvote, downvote from answers where id = $1
 					`
 				)
 
@@ -223,9 +223,9 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 				var (
-					question = question{}
+					question = answer{}
 					query    = `
-						select upvote,downvote from questions where id = $1
+						select upvote,downvote from answers where id = $1
 					`
 				)
 
@@ -265,7 +265,7 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 				t.Error(err)
 			}
 
-			req, err := http.NewRequest(http.MethodPatch, fmt.Sprintf("http://%s/%s/%s/vote", url, "questions", s.questionId), bytes.NewReader(payload))
+			req, err := http.NewRequest(http.MethodPatch, fmt.Sprintf("http://%s/%s/%s/vote", url, "questions/answers", s.answerId), bytes.NewReader(payload))
 			if err != nil {
 				t.Error(err)
 			}

@@ -122,7 +122,7 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 	vote := value.VotePayload{
-		QuestionId: chi.URLParam(r, "questionId"),
+		AnswerId: chi.URLParam(r, "answerId"),
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&vote); err != nil {
@@ -134,7 +134,7 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	question, err := h.svc.Vote(r.Context(), vote)
+	answer, err := h.svc.Vote(r.Context(), vote)
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {
@@ -149,7 +149,7 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if errors.Is(err, ErrQuestionNotFound) {
+	if errors.Is(err, ErrAnswerNotFound) {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusNotFound,
 			Info: err.Error(),
@@ -171,7 +171,7 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 		Code: http.StatusOK,
 		Info: "success",
 		Data: map[string]interface{}{
-			"doc": question,
+			"doc": answer,
 		},
 	})
 }
