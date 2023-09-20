@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/rizface/quora/identifier"
 )
 
 type Feature struct {
@@ -27,10 +28,17 @@ func NewFeature(r *chi.Mux, db *sql.DB) *Feature {
 }
 
 func (q *Feature) RegisterRoutes() {
-	q.r.Route("/questions", func(r chi.Router) {
-		r.Post("/", q.handler.CreateQuestion)
-		r.Patch("/answers/{answerId}/vote", q.handler.Vote)
-		r.Get("/", q.handler.GetQuestion)
-		r.Post("/answers", q.handler.AnswerQuestion)
+	q.r.Group(func(r chi.Router) {
+		r.Use(identifier.Identifier)
+
+		r.Route("/questions", func(r chi.Router) {
+			r.Post("/", q.handler.CreateQuestion)
+			r.Get("/", q.handler.GetQuestion)
+		})
+
+		r.Route("/answers", func(r chi.Router) {
+			r.Post("/", q.handler.AnswerQuestion)
+			r.Patch("/{answerId}/vote", q.handler.Vote)
+		})
 	})
 }

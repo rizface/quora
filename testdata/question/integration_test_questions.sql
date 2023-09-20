@@ -12,6 +12,7 @@ INSERT INTO questions (id,author_id,space_id,question,created_at,updated_at) VAL
 ('4b9ef364-0d6a-4f60-a169-39b1d076c65d','f028ac5a-e4c9-442f-bf9a-86c024a79baa',NULL,'yooo this work >?','2023-09-02 02:42:59.334677','2023-09-02 02:42:59.334677'),
 ('4b9ef364-0d6a-4f60-a169-39b1d076c65e','f028ac5a-e4c9-442f-bf9a-86c024a79baa',NULL,'yooo this work >?','2023-09-02 02:42:59.334677','2023-09-02 02:42:59.334677'),
 ('4b9ef364-0d6a-4f60-a169-39b1d076c65f','f028ac5a-e4c9-442f-bf9a-86c024a79baa',NULL,'yooo this work >?','2023-09-02 02:42:59.334677','2023-09-02 02:42:59.334677'),
+('4b9ef364-0d6a-4f60-a169-39b1d076c63a','f028ac5a-e4c9-442f-bf9a-86c024a79baa',NULL,'yooo this work >?','2023-09-02 02:42:59.334677','2023-09-02 02:42:59.334677'),
 ('4b9ef364-0d6a-4f60-a169-39b1d076c65b','f028ac5a-e4c9-442f-bf9a-86c024a79baa',NULL,'yooo this work >?','2023-09-02 02:42:59.334677','2023-09-02 02:42:59.334677');
 
 INSERT INTO answers(id, question_id, answerer_id, upvote, downvote, answer) VALUES

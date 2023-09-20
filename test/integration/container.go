@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/google/uuid"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
@@ -72,8 +71,8 @@ func spawnQuora(ctx context.Context, pgC testcontainers.Container, network strin
 			"PG_PASSWORD":        "pgquora",
 			"PG_DBNAME":          "pgquora",
 			"APP_PORT":           ":3000",
-			"JWT_ACCESS_SECRET":  uuid.NewString(),
-			"JWT_REFRESH_SECRET": uuid.NewString(),
+			"JWT_ACCESS_SECRET":  "access secret",
+			"JWT_REFRESH_SECRET": "refresh secret",
 		},
 		WaitingFor: wait.ForListeningPort("3000"),
 	}

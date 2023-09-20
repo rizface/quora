@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/rizface/quora/identifier"
 	"github.com/rizface/quora/question/value"
 )
 
@@ -17,6 +18,14 @@ type (
 	AnwerQuestionRequest struct {
 		value.AnswerPayload
 	}
+
+	Input struct {
+		Identity        identifier.Claim
+		QuestionPayload value.QuestionPayload
+		QuestionQuery   value.QuestionQuery
+		VotePayload     value.VotePayload
+		AnswerPayload   value.AnswerPayload
+	}
 )
 
 func NewService(repo *Repository, voteRepo *VoteRepo, answerRepo *AnswerRepo) *Service {
@@ -27,10 +36,10 @@ func NewService(repo *Repository, voteRepo *VoteRepo, answerRepo *AnswerRepo) *S
 	}
 }
 
-func (s *Service) CreateQuestion(ctx context.Context, q value.QuestionPayload) (value.QuestionEntity, error) {
+func (s *Service) CreateQuestion(ctx context.Context, input Input) (value.QuestionEntity, error) {
 	var (
-		accountId = "f028ac5a-e4c9-442f-bf9a-86c024a79baa" //TODO: update this line using current logged in user
-		question  = value.NewQuestionEntity(q, accountId)
+		accountId = input.Identity.AccountId
+		question  = value.NewQuestionEntity(input.QuestionPayload, accountId)
 	)
 
 	if err := question.Validate(); err != nil {
@@ -44,12 +53,12 @@ func (s *Service) CreateQuestion(ctx context.Context, q value.QuestionPayload) (
 	return question, nil
 }
 
-func (s *Service) GetQuestions(ctx context.Context, q value.QuestionQuery) (value.Aggregate, error) {
-	if err := value.ValidateQuestionQueery(q); err != nil {
+func (s *Service) GetQuestions(ctx context.Context, input Input) (value.Aggregate, error) {
+	if err := value.ValidateQuestionQueery(input.QuestionQuery); err != nil {
 		return value.Aggregate{}, err
 	}
 
-	questions, err := s.repo.GetList(ctx, q)
+	questions, err := s.repo.GetList(ctx, input.QuestionQuery)
 	if err != nil {
 		return value.Aggregate{}, err
 	}
@@ -65,10 +74,10 @@ func (s *Service) GetQuestions(ctx context.Context, q value.QuestionQuery) (valu
 	}, nil
 }
 
-func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.Answer, error) {
+func (s *Service) Vote(ctx context.Context, input Input) (value.Answer, error) {
 	var (
-		voterId = "f028ac5a-e4c9-442f-bf9a-86c024a79baa" //TODO: update this line using current logged in user
-		vote    = value.NewVote(p, voterId)
+		voterId = input.Identity.AccountId
+		vote    = value.NewVote(input.VotePayload, voterId)
 	)
 
 	if err := value.ValidateVote(vote); err != nil {
@@ -106,11 +115,11 @@ func (s *Service) Vote(ctx context.Context, p value.VotePayload) (value.Answer, 
 	return answer, nil
 }
 
-func (s *Service) Answer(ctx context.Context, p value.AnswerPayload) (value.Answer, error) {
+func (s *Service) Answer(ctx context.Context, input Input) (value.Answer, error) {
 	var (
-		answererId = "f028ac5a-e4c9-442f-bf9a-86c024a79baa" //TODO: update this line using current logged in user
+		answererId = input.Identity.AccountId
 		answer     = value.NewAnswer(value.NewAnswerParam{
-			AnswerPayload: p,
+			AnswerPayload: input.AnswerPayload,
 			AnswererId:    answererId,
 		})
 	)

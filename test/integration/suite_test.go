@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"os"
 	"testing"
 
 	"github.com/rizface/quora/provider"
@@ -19,6 +20,9 @@ type IntegrationTestSuite struct {
 }
 
 func (suite *IntegrationTestSuite) SetupSuite() {
+	os.Setenv("JWT_ACCESS_SECRET", "access secret")
+	os.Setenv("JWT_REFRESH_SECRET", "refresh secret")
+
 	suite.ctx = context.Background()
 	suite.services, suite.cleaner = spawnServices(suite.ctx)
 

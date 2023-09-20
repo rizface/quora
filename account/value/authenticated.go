@@ -21,9 +21,9 @@ type Authenticated struct {
 }
 
 type Claim struct {
-	AccountId string
-	Email     string
-	Usernamae string
+	AccountId string `json:"accountId"`
+	Email     string `json:"email"`
+	Username  string `json:"username"`
 	jwt.RegisteredClaims
 }
 
@@ -35,7 +35,7 @@ func getTokens(a Authenticated) ([]Token, error) {
 		claim         = Claim{
 			AccountId: a.Id,
 			Email:     a.Email,
-			Usernamae: a.Username,
+			Username:  a.Username,
 			RegisteredClaims: jwt.RegisteredClaims{
 				IssuedAt: jwt.NewNumericDate(time.Now()),
 				Issuer:   "quora",

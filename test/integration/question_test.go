@@ -7,12 +7,22 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/rizface/quora/account/value"
 	"github.com/stretchr/testify/assert"
 )
 
 func (suite *IntegrationTestSuite) TestCreateNewQuestion() {
 	type question struct {
 		id string
+	}
+
+	authenticated, err := value.NewAuthenticated(value.AccountEntity{
+		Id:       "f028ac5a-e4c9-442f-bf9a-86c024a79baa",
+		Username: "testlogin",
+		Email:    "testlogin@gmail.com",
+	})
+	if err != nil {
+		suite.Error(err)
 	}
 
 	ImportSQL(suite.db, "../../testdata/question/integration_test_questions.sql")
@@ -83,6 +93,7 @@ func (suite *IntegrationTestSuite) TestCreateNewQuestion() {
 			if err != nil {
 				t.Error(err)
 			}
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value))
 
 			resp, err := client.Do(req)
 			if err != nil {
@@ -97,7 +108,7 @@ func (suite *IntegrationTestSuite) TestCreateNewQuestion() {
 	}
 }
 
-func (suite *IntegrationTestSuite) TestVoteQuestion() {
+func (suite *IntegrationTestSuite) TestVoteAnswer() {
 	type scenario struct {
 		name             string
 		answerId         string
@@ -109,6 +120,15 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 	type answer struct {
 		upvote   int
 		downvote int
+	}
+
+	authenticated, err := value.NewAuthenticated(value.AccountEntity{
+		Id:       "f028ac5a-e4c9-442f-bf9a-86c024a79baa",
+		Username: "testlogin",
+		Email:    "testlogin@gmail.com",
+	})
+	if err != nil {
+		suite.Error(err)
 	}
 
 	ImportSQL(suite.db, "../../testdata/question/integration_test_questions.sql")
@@ -265,10 +285,12 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 				t.Error(err)
 			}
 
-			req, err := http.NewRequest(http.MethodPatch, fmt.Sprintf("http://%s/%s/%s/vote", url, "questions/answers", s.answerId), bytes.NewReader(payload))
+			req, err := http.NewRequest(http.MethodPatch, fmt.Sprintf("http://%s/%s/%s/vote", url, "answers", s.answerId), bytes.NewReader(payload))
 			if err != nil {
 				t.Error(err)
 			}
+
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value))
 
 			resp, err := client.Do(req)
 			if err != nil {
@@ -281,4 +303,125 @@ func (suite *IntegrationTestSuite) TestVoteQuestion() {
 			}
 		})
 	}
+}
+
+func (suite *IntegrationTestSuite) TestCreateAnswer() {
+	type (
+		scenario struct {
+			name             string
+			payload          map[string]interface{}
+			checkExpectation func(resp *http.Response)
+		}
+
+		answer struct {
+			id string
+		}
+	)
+
+	authenticated, err := value.NewAuthenticated(value.AccountEntity{
+		Id:       "f028ac5a-e4c9-442f-bf9a-86c024a79baa",
+		Username: "testlogin",
+		Email:    "testlogin@gmail.com",
+	})
+	if err != nil {
+		suite.Error(err)
+	}
+
+	ImportSQL(suite.db, "../../testdata/question/integration_test_questions.sql")
+
+	scenarios := []scenario{
+		{
+			name: "success create answer for question",
+			payload: map[string]interface{}{
+				"answer":     "this is good questions",
+				"questionId": "4b9ef364-0d6a-4f60-a169-39b1d076c63a",
+			},
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusOK, resp.StatusCode)
+
+				var (
+					answer = answer{}
+					query  = `
+						select id from answers where question_id = $1
+					`
+				)
+
+				err := suite.db.QueryRowContext(suite.ctx, query, "4b9ef364-0d6a-4f60-a169-39b1d076c63a").Scan(&answer.id)
+				suite.NoError(err)
+			},
+		},
+		{
+			name: "failed create answer for not found question",
+			payload: map[string]interface{}{
+				"answer":     "this is good questions",
+				"questionId": "4b9ef364-0d6a-4f60-a169-39b1d076c62a",
+			},
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusNotFound, resp.StatusCode)
+			},
+		},
+		{
+			name: "failed create empty answer",
+			payload: map[string]interface{}{
+				"answer":     "",
+				"questionId": "4b9ef364-0d6a-4f60-a169-39b1d076c63a",
+			},
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusBadRequest, resp.StatusCode)
+
+				var (
+					answer = answer{}
+					query  = `
+						select id from answers where question_id = $1
+					`
+				)
+
+				err := suite.db.QueryRowContext(suite.ctx, query, "4b9ef364-0d6a-4f60-a169-39b1d076c63a").Scan(&answer.id)
+				suite.NoError(err)
+			},
+		},
+	}
+
+	for _, s := range scenarios {
+		suite.Run(s.name, func() {
+			client := &http.Client{}
+
+			url, err := suite.services.quora.Endpoint(suite.ctx, "")
+			if err != nil {
+				suite.Error(err)
+			}
+
+			payload, err := json.Marshal(s.payload)
+			if err != nil {
+				suite.Error(err)
+			}
+
+			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/%s", url, "answers"), bytes.NewReader(payload))
+			if err != nil {
+				suite.Error(err)
+			}
+
+			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value))
+
+			resp, err := client.Do(req)
+			if err != nil {
+				suite.Error(err)
+			}
+			defer resp.Body.Close()
+
+			if s.checkExpectation != nil {
+				s.checkExpectation(resp)
+			}
+		})
+	}
+}
+
+func prinResponse(t *testing.T, w *http.Response) {
+	body := map[string]interface{}{}
+
+	if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(body)
 }

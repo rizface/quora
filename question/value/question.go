@@ -24,8 +24,6 @@ type QuestionEntity struct {
 	SpaceId   nuller.NullString `json:"spaceId"`
 	AuthorId  string            `json:"authorId"`
 	Question  string            `json:"question"`
-	Upvote    int               `json:"upvote"`
-	Downvote  int               `json:"downvote"`
 	Author    Author            `json:"author"`
 	CreatedAt time.Time         `json:"createdAt"`
 	UpdatedAt time.Time         `json:"updatedAt"`

@@ -32,7 +32,7 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 	var (
 		questions = []value.QuestionEntity{}
 		query     = `
-			SELECT id, author_id, question, upvote, downvote, created_at, updated_at FROM questions LIMIT $1 OFFSET $2
+			SELECT id, author_id, question, created_at, updated_at FROM questions LIMIT $1 OFFSET $2
 		`
 	)
 
@@ -64,8 +64,6 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 			&question.Id,
 			&question.AuthorId,
 			&question.Question,
-			&question.Upvote,
-			&question.Downvote,
 			&question.CreatedAt,
 			&question.UpdatedAt,
 		)
@@ -103,7 +101,7 @@ func (r *Repository) GetOne(ctx context.Context, questionId string) (value.Quest
 	var (
 		question value.QuestionEntity
 		query    = `
-			SELECT id, author_id, question, upvote, downvote, created_at, updated_at FROM questions WHERE id = $1
+			SELECT id, author_id, question, created_at, updated_at FROM questions WHERE id = $1
 		`
 	)
 
@@ -113,8 +111,6 @@ func (r *Repository) GetOne(ctx context.Context, questionId string) (value.Quest
 			&question.Id,
 			&question.AuthorId,
 			&question.Question,
-			&question.Upvote,
-			&question.Downvote,
 			&question.CreatedAt,
 			&question.UpdatedAt,
 		)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	validation "github.com/go-ozzo/ozzo-validation"
+	"github.com/rizface/quora/identifier"
 	"github.com/rizface/quora/question/value"
 	"github.com/rizface/quora/stdres"
 )
@@ -23,9 +24,19 @@ func NewHandler(svc *Service) *Handler {
 }
 
 func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
+	identity, err := identifier.GetFromContext(r.Context())
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
 	var payload value.QuestionPayload
 
-	err := json.NewDecoder(r.Body).Decode(&payload)
+	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusBadRequest,
@@ -35,7 +46,10 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	question, err := h.svc.CreateQuestion(r.Context(), payload)
+	question, err := h.svc.CreateQuestion(r.Context(), Input{
+		Identity:        *identity,
+		QuestionPayload: payload,
+	})
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {
@@ -67,6 +81,16 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
+	identity, err := identifier.GetFromContext(r.Context())
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
 	// parse query param (limit and skip)
 	urlQuery, err := url.ParseQuery(r.URL.RawQuery)
 	if err != nil {
@@ -88,7 +112,10 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.svc.GetQuestions(r.Context(), query)
+	result, err := h.svc.GetQuestions(r.Context(), Input{
+		Identity:      *identity,
+		QuestionQuery: query,
+	})
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {
@@ -121,6 +148,16 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
+	identity, err := identifier.GetFromContext(r.Context())
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
 	vote := value.VotePayload{
 		AnswerId: chi.URLParam(r, "answerId"),
 	}
@@ -134,7 +171,10 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answer, err := h.svc.Vote(r.Context(), vote)
+	answer, err := h.svc.Vote(r.Context(), Input{
+		Identity:    *identity,
+		VotePayload: vote,
+	})
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {
@@ -177,6 +217,16 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
+	identity, err := identifier.GetFromContext(r.Context())
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
 	var (
 		payload value.AnswerPayload
 	)
@@ -188,7 +238,10 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	answer, err := h.svc.Answer(r.Context(), payload)
+	answer, err := h.svc.Answer(r.Context(), Input{
+		Identity:      *identity,
+		AnswerPayload: payload,
+	})
 
 	vErr := validation.Errors{}
 	if errors.As(err, &vErr) {
