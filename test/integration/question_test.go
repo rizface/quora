@@ -1,9 +1,9 @@
 package integration
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"testing"
 
@@ -77,27 +77,23 @@ func (suite *IntegrationTestSuite) TestCreateNewQuestion() {
 
 	for _, s := range scenarios {
 		t.Run(s.name, func(t *testing.T) {
-			client := &http.Client{}
-
 			url, err := suite.services.quora.Endpoint(suite.ctx, "")
 			if err != nil {
 				t.Error(err)
 			}
 
-			payload, err := json.Marshal(s.payload)
-			if err != nil {
-				t.Error(err)
+			r := requester{
+				url:     fmt.Sprintf("http://%s/%s", url, "questions/"),
+				payload: s.payload,
+				method:  http.MethodPost,
+				headers: map[string]string{
+					"Authorization": fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value),
+				},
 			}
 
-			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/%s", url, "questions/"), bytes.NewReader(payload))
+			resp, err := r.do()
 			if err != nil {
-				t.Error(err)
-			}
-			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value))
-
-			resp, err := client.Do(req)
-			if err != nil {
-				t.Error(err)
+				log.Fatal(err)
 			}
 			defer resp.Body.Close()
 
@@ -271,28 +267,23 @@ func (suite *IntegrationTestSuite) TestVoteAnswer() {
 				s.checPreTest(t)
 			}
 
-			client := &http.Client{}
-
 			url, err := suite.services.quora.Endpoint(suite.ctx, "")
 			if err != nil {
 				t.Error(err)
 			}
 
-			payload, err := json.Marshal(map[string]interface{}{
-				"type": s.voteType,
-			})
-			if err != nil {
-				t.Error(err)
+			r := requester{
+				url: fmt.Sprintf("http://%s/%s/%s/vote", url, "answers", s.answerId),
+				payload: map[string]interface{}{
+					"type": s.voteType,
+				},
+				method: http.MethodPatch,
+				headers: map[string]string{
+					"Authorization": fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value),
+				},
 			}
 
-			req, err := http.NewRequest(http.MethodPatch, fmt.Sprintf("http://%s/%s/%s/vote", url, "answers", s.answerId), bytes.NewReader(payload))
-			if err != nil {
-				t.Error(err)
-			}
-
-			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value))
-
-			resp, err := client.Do(req)
+			resp, err := r.do()
 			if err != nil {
 				t.Error(err)
 			}
@@ -384,26 +375,21 @@ func (suite *IntegrationTestSuite) TestCreateAnswer() {
 
 	for _, s := range scenarios {
 		suite.Run(s.name, func() {
-			client := &http.Client{}
-
 			url, err := suite.services.quora.Endpoint(suite.ctx, "")
 			if err != nil {
 				suite.Error(err)
 			}
 
-			payload, err := json.Marshal(s.payload)
-			if err != nil {
-				suite.Error(err)
+			r := requester{
+				url:     fmt.Sprintf("http://%s/%s", url, "answers"),
+				payload: s.payload,
+				method:  http.MethodPost,
+				headers: map[string]string{
+					"Authorization": fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value),
+				},
 			}
 
-			req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("http://%s/%s", url, "answers"), bytes.NewReader(payload))
-			if err != nil {
-				suite.Error(err)
-			}
-
-			req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", authenticated.Tokens[0].Value))
-
-			resp, err := client.Do(req)
+			resp, err := r.do()
 			if err != nil {
 				suite.Error(err)
 			}

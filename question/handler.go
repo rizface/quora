@@ -277,3 +277,22 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 		Data: map[string]interface{}{"doc": answer},
 	})
 }
+
+func (h *Handler) DeleteQuestion(w http.ResponseWriter, r *http.Request) {
+	identity, err := identifier.GetFromContext(r.Context())
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	input := Input{
+		IdQuestion: chi.URLParam(r, "id"),
+		Identity:   *identity,
+	}
+
+	err = h.svc.DeleteQuestion(r.Context(), input)
+}

@@ -124,3 +124,13 @@ func (r *Repository) GetOne(ctx context.Context, questionId string) (value.Quest
 
 	return question, nil
 }
+
+func (r *Repository) DeleteQuestion(ctx context.Context, question value.QuestionEntity) error {
+	command := `
+		DELETE FROM questions WHERE id = $1
+	`
+
+	_, err := r.db.ExecContext(ctx, command, question.Id)
+
+	return err
+}

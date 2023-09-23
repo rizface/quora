@@ -34,6 +34,7 @@ func (q *Feature) RegisterRoutes() {
 		r.Route("/questions", func(r chi.Router) {
 			r.Post("/", q.handler.CreateQuestion)
 			r.Get("/", q.handler.GetQuestion)
+			r.Delete("/{id}", q.handler.DeleteQuestion)
 		})
 
 		r.Route("/answers", func(r chi.Router) {

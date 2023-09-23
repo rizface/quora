@@ -20,6 +20,7 @@ type (
 	}
 
 	Input struct {
+		IdQuestion      string
 		Identity        identifier.Claim
 		QuestionPayload value.QuestionPayload
 		QuestionQuery   value.QuestionQuery
@@ -142,4 +143,21 @@ func (s *Service) Answer(ctx context.Context, input Input) (value.Answer, error)
 	}
 
 	return answer, nil
+}
+
+func (s *Service) DeleteQuestion(ctx context.Context, input Input) error {
+	question, err := s.repo.GetOne(ctx, input.IdQuestion)
+	if err != nil {
+		return err
+	}
+
+	if !question.IsThisTheAuthor(input.Identity) {
+		return ErrNotTheAuthor
+	}
+
+	if err = s.repo.DeleteQuestion(ctx, question); err != nil {
+		return err
+	}
+
+	return nil
 }
