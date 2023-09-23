@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -393,6 +394,112 @@ func (suite *IntegrationTestSuite) TestCreateAnswer() {
 			if err != nil {
 				suite.Error(err)
 			}
+			defer resp.Body.Close()
+
+			if s.checkExpectation != nil {
+				s.checkExpectation(resp)
+			}
+		})
+	}
+}
+
+func (suite *IntegrationTestSuite) TestDeleteQuestion() {
+	type (
+		scenario struct {
+			name             string
+			questionId       string
+			token            string
+			checkExpectation func(resp *http.Response)
+		}
+
+		question struct {
+			id string
+		}
+	)
+
+	var (
+		// mimick user in database
+		users = map[string]value.AccountEntity{
+			"user1": {
+				Id:       "f028ac5a-e4c9-442f-bf9a-86c024a79baa",
+				Username: "testlogin",
+				Email:    "testlogin@gmail.com",
+			},
+			"user2": {
+				Id:       "f028ac5a-e4c9-442f-bf9a-86c024a79bac",
+				Username: "testdelete",
+				Email:    "testdelete@gmail.com",
+			},
+		}
+
+		usersToken = map[string]string{}
+	)
+
+	for k, v := range users {
+		authenticated, err := value.NewAuthenticated(v)
+		if err != nil {
+			suite.T().Fatal(err)
+		}
+
+		usersToken[k] = authenticated.Tokens[0].Value
+	}
+
+	ImportSQL(suite.db, "../../testdata/question/integration_test_questions.sql")
+
+	scenarios := []scenario{
+		{
+			name:       "success delete one question",
+			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c63c",
+			token:      usersToken["user1"],
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusOK, resp.StatusCode)
+
+				question := question{}
+
+				err := suite.db.QueryRow(`SELECT id FROM questions where id = $1`, "4b9ef364-0d6a-4f60-a169-39b1d076c63c").Scan(&question.id)
+
+				suite.ErrorIs(err, sql.ErrNoRows)
+			},
+		},
+		{
+			name:       "failed delete one question (not found)",
+			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c62b",
+			token:      usersToken["user1"],
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusNotFound, resp.StatusCode)
+			},
+		},
+		{
+			name:       "failed delete one question (not the author)",
+			questionId: "4b9ef364-0d6a-4f60-a169-39b1d076c65e",
+			token:      usersToken["user2"],
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusUnauthorized, resp.StatusCode)
+			},
+		},
+	}
+
+	for _, s := range scenarios {
+		suite.Run(s.name, func() {
+			url, err := suite.services.quora.Endpoint(suite.ctx, "")
+			if err != nil {
+				suite.Error(err)
+			}
+
+			r := requester{
+				url:     fmt.Sprintf("http://%s/%s/%s", url, "questions", s.questionId),
+				payload: nil,
+				method:  http.MethodDelete,
+				headers: map[string]string{
+					"Authorization": "Bearer " + s.token,
+				},
+			}
+
+			resp, err := r.do()
+			if err != nil {
+				suite.T().Error(err)
+			}
+
 			defer resp.Body.Close()
 
 			if s.checkExpectation != nil {

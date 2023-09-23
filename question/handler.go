@@ -295,4 +295,35 @@ func (h *Handler) DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.svc.DeleteQuestion(r.Context(), input)
+	if errors.Is(err, ErrNotTheAuthor) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	if errors.Is(err, ErrQuestionNotFound) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusNotFound,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusInternalServerError,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	stdres.Writer(w, stdres.Response{
+		Code: http.StatusOK,
+		Info: "success",
+	})
 }
