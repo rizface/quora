@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	"github.com/rizface/quora/question/value"
 )
@@ -32,9 +33,15 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 	var (
 		questions = []value.QuestionEntity{}
 		query     = `
-			SELECT id, author_id, question, created_at, updated_at FROM questions LIMIT $1 OFFSET $2
+			SELECT id, author_id, space_id, question, created_at, updated_at FROM questions
 		`
 	)
+
+	if len(q.SpaceIds) > 0 {
+		query = fmt.Sprintf("%s %s %s", query, "WHERE space_id IN", q.SpaceIds.ToSqlArray())
+	}
+
+	query = fmt.Sprintf("%s %s", query, "LIMIT $1 OFFSET $2")
 
 	rows, err := r.db.QueryContext(ctx, query, q.Limit, q.Skip)
 	if err != nil {
@@ -63,6 +70,7 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 		err := rows.Scan(
 			&question.Id,
 			&question.AuthorId,
+			&question.SpaceId,
 			&question.Question,
 			&question.CreatedAt,
 			&question.UpdatedAt,

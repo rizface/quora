@@ -1,15 +1,40 @@
 package value
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation"
 )
 
-type QuestionQuery struct {
-	Limit int
-	Skip  int
+type (
+	StringIds     []string
+	QuestionQuery struct {
+		Limit    int
+		Skip     int
+		SpaceIds StringIds
+	}
+)
+
+func (s StringIds) ToSqlArray() string {
+	if len(s) < 1 {
+		return "()"
+	}
+
+	ids := ""
+
+	for k, v := range s {
+		ids = fmt.Sprintf("%s'%s'", ids, v)
+		if k != len(s)-1 {
+			ids = fmt.Sprintf("%s, ", ids)
+		}
+	}
+
+	ids = fmt.Sprintf("(%s)", strings.Trim(ids, " "))
+
+	return ids
 }
 
 func NewQuestionQuery(url url.Values) (QuestionQuery, error) {
@@ -34,6 +59,10 @@ func NewQuestionQuery(url url.Values) (QuestionQuery, error) {
 		}
 
 		q.Limit = limit
+	}
+
+	if url.Has("space_ids") && len(url.Get("space_ids")) > 0 {
+		q.SpaceIds = url["space_ids"]
 	}
 
 	return q, nil

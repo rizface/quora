@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"net/url"
 
 	"github.com/go-chi/chi/v5"
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -91,18 +90,7 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// parse query param (limit and skip)
-	urlQuery, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		stdres.Writer(w, stdres.Response{
-			Code: http.StatusBadRequest,
-			Info: "failed parse url query",
-		})
-
-		return
-	}
-
-	query, err := value.NewQuestionQuery(urlQuery)
+	query, err := value.NewQuestionQuery(r.URL.Query())
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusBadRequest,

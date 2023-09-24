@@ -46,12 +46,13 @@ func (n NullString) Value() (driver.Value, error) {
 }
 
 func (n *NullString) Scan(value interface{}) error {
-	str, ok := value.(string)
+	bytesValue, ok := value.([]byte)
 	if !ok {
-		return errors.New("value is not valid string")
+		return errors.New("invalid value: not a bytes")
 	}
 
-	n.String = str
+	n.String = string(bytesValue)
+	n.Valid = len(n.String) != 0
 
 	return nil
 }
