@@ -161,3 +161,28 @@ func (s *Service) DeleteQuestion(ctx context.Context, input Input) error {
 
 	return nil
 }
+
+func (s *Service) UpdateQuestion(ctx context.Context, input Input) (value.QuestionEntity, error) {
+	question, err := s.repo.GetOne(ctx, input.IdQuestion)
+	if err != nil {
+		return value.QuestionEntity{}, err
+	}
+
+	if !question.IsThisTheAuthor(input.Identity) {
+		return value.QuestionEntity{}, ErrNotTheAuthor
+	}
+
+	question.SyncWithPayload(input.QuestionPayload)
+
+	err = question.Validate()
+	if err != nil {
+		return value.QuestionEntity{}, err
+	}
+
+	err = s.repo.UpdateQuestion(ctx, question)
+	if err != nil {
+		return value.QuestionEntity{}, err
+	}
+
+	return question, nil
+}

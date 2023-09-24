@@ -327,3 +327,81 @@ func (h *Handler) DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 		Info: "success",
 	})
 }
+
+func (h *Handler) UpdateQuestion(w http.ResponseWriter, r *http.Request) {
+	var (
+		ctx        = r.Context()
+		payload    value.QuestionPayload
+		idQuestion = chi.URLParam(r, "id")
+	)
+
+	identity, err := identifier.GetFromContext(ctx)
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "failed decode payload",
+		})
+
+		return
+	}
+
+	question, err := h.svc.UpdateQuestion(r.Context(), Input{
+		IdQuestion:      idQuestion,
+		QuestionPayload: payload,
+		Identity:        *identity,
+	})
+
+	if errors.Is(err, ErrQuestionNotFound) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusNotFound,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	if errors.Is(err, ErrNotTheAuthor) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusUnauthorized,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	vErr := validation.Errors{}
+	if errors.As(err, &vErr) {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusBadRequest,
+			Info: "validation error",
+			Data: vErr,
+		})
+
+		return
+	}
+
+	if err != nil {
+		stdres.Writer(w, stdres.Response{
+			Code: http.StatusInternalServerError,
+			Info: err.Error(),
+		})
+
+		return
+	}
+
+	stdres.Writer(w, stdres.Response{
+		Code: http.StatusOK,
+		Data: question,
+		Info: "success",
+	})
+}

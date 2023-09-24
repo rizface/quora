@@ -134,3 +134,13 @@ func (r *Repository) DeleteQuestion(ctx context.Context, question value.Question
 
 	return err
 }
+
+func (r *Repository) UpdateQuestion(ctx context.Context, question value.QuestionEntity) error {
+	command := `
+		UPDATE questions SET question = $1, space_id = $2 WHERE id = $3
+	`
+
+	_, err := r.db.ExecContext(ctx, command, question.Question, question.SpaceId, question.Id)
+
+	return err
+}

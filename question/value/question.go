@@ -49,11 +49,16 @@ func NewQuestionEntity(p QuestionPayload, authorId string) QuestionEntity {
 func (q QuestionEntity) Validate() error {
 	return validation.Errors{
 		"authorId": validation.Validate(q.AuthorId, validation.Required, is.UUID),
-		"spaceId":  validation.Validate("a53152d7-2d24-42e1-a55f-649e87349ffa", is.UUID),
+		"spaceId":  validation.Validate(q.SpaceId, is.UUID),
 		"question": validation.Validate(q.Question, validation.Required),
 	}.Filter()
 }
 
 func (q QuestionEntity) IsThisTheAuthor(identity identifier.Claim) bool {
 	return q.AuthorId == identity.AccountId
+}
+
+func (q *QuestionEntity) SyncWithPayload(payload QuestionPayload) {
+	q.Question = payload.Question
+	q.SpaceId = payload.SpaceId
 }

@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -492,6 +493,169 @@ func (suite *IntegrationTestSuite) TestDeleteQuestion() {
 				method:  http.MethodDelete,
 				headers: map[string]string{
 					"Authorization": "Bearer " + s.token,
+				},
+			}
+
+			resp, err := r.do()
+			if err != nil {
+				suite.T().Error(err)
+			}
+
+			defer resp.Body.Close()
+
+			if s.checkExpectation != nil {
+				s.checkExpectation(resp)
+			}
+		})
+	}
+}
+
+func (suite *IntegrationTestSuite) TestUpdateQuestion() {
+	type (
+		scenario struct {
+			name             string
+			idQuestion       string
+			token            string
+			payload          map[string]interface{}
+			preTest          func()
+			checkExpectation func(resp *http.Response)
+		}
+
+		question struct {
+			id       string
+			question string
+			spaceId  sql.NullString
+		}
+	)
+
+	var (
+		// mimick user in database
+		users = map[string]value.AccountEntity{
+			"user1": {
+				Id:       "f028ac5a-e4c9-442f-bf9a-86c024a79baa",
+				Username: "testlogin",
+				Email:    "testlogin@gmail.com",
+			},
+			"user2": {
+				Id:       "f028ac5a-e4c9-442f-bf9a-86c024a79bac",
+				Username: "testdelete",
+				Email:    "testdelete@gmail.com",
+			},
+		}
+
+		usersToken = map[string]string{}
+	)
+
+	for k, v := range users {
+		authenticated, err := value.NewAuthenticated(v)
+		if err != nil {
+			suite.T().Fatal(err)
+		}
+
+		usersToken[k] = authenticated.Tokens[0].Value
+	}
+
+	ImportSQL(suite.db, "../../testdata/question/integration_test_questions.sql")
+
+	scenarios := []scenario{
+		{
+			name:       "success update one question",
+			idQuestion: "4b9ef364-0d6a-4f60-a169-39b1d076c64b",
+			payload: map[string]interface{}{
+				"spaceId":  "a53152d7-2d24-42e1-a55f-649e87349ffa",
+				"question": "updated",
+			},
+			token: usersToken["user1"],
+			preTest: func() {
+				var (
+					query = `
+						select id, question, space_id from questions where id = $1
+					`
+					question = question{}
+				)
+
+				err := suite.db.QueryRowContext(context.Background(), query, "4b9ef364-0d6a-4f60-a169-39b1d076c64b").Scan(&question.id, &question.question, &question.spaceId)
+				if err != nil {
+					suite.T().Error(err)
+				}
+
+				suite.Equal("", question.spaceId.String)
+				suite.Equal("before update", question.question)
+			},
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusOK, resp.StatusCode)
+
+				var (
+					query = `
+						select id, question, space_id from questions where id = $1
+					`
+					question = question{}
+				)
+
+				err := suite.db.QueryRowContext(context.Background(), query, "4b9ef364-0d6a-4f60-a169-39b1d076c64b").Scan(&question.id, &question.question, &question.spaceId)
+				if err != nil {
+					suite.T().Error(err)
+				}
+
+				suite.Equal("a53152d7-2d24-42e1-a55f-649e87349ffa", question.spaceId.String)
+				suite.Equal("updated", question.question)
+			},
+		},
+		{
+			name: "failed update question - empty question",
+			payload: map[string]interface{}{
+				"spaceId":  "a53152d7-2d24-42e1-a55f-649e87349ffa",
+				"question": "",
+			},
+			token:      usersToken["user1"],
+			idQuestion: "4b9ef364-0d6a-4f60-a169-39b1d076c64b",
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusBadRequest, resp.StatusCode)
+			},
+		},
+		{
+			name:       "failed update one question - not the author",
+			idQuestion: "4b9ef364-0d6a-4f60-a169-39b1d076c64b",
+			payload: map[string]interface{}{
+				"spaceId":  "a53152d7-2d24-42e1-a55f-649e87349ffa",
+				"question": "updated",
+			},
+			token: usersToken["user2"],
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusUnauthorized, resp.StatusCode)
+			},
+		},
+		{
+			name: "failed update question - question not found",
+			payload: map[string]interface{}{
+				"spaceId":  "a53152d7-2d24-42e1-a55f-649e87349ffa",
+				"question": "updated",
+			},
+			token:      usersToken["user1"],
+			idQuestion: "4b9ef364-0d6a-4f60-a169-39b1d076c62b",
+			checkExpectation: func(resp *http.Response) {
+				suite.Equal(http.StatusNotFound, resp.StatusCode)
+			},
+		},
+	}
+
+	for _, s := range scenarios {
+		suite.Run(s.name, func() {
+			if s.preTest != nil {
+				s.preTest()
+			}
+
+			url, err := suite.services.quora.Endpoint(suite.ctx, "")
+			if err != nil {
+				suite.Error(err)
+			}
+
+			r := requester{
+				url:     fmt.Sprintf("http://%s/%s/%s", url, "questions", s.idQuestion),
+				payload: s.payload,
+				method:  http.MethodPut,
+				headers: map[string]string{
+					"Authorization": fmt.Sprintf("Bearer %s", s.token),
 				},
 			}
 
