@@ -15,13 +15,19 @@ type (
 		QuestionId string `json:"questionId"`
 	}
 
+	Answerer struct {
+		Id       string `json:"id"`
+		Username string `json:"username"`
+	}
+
 	Answer struct {
 		Id         string    `json:"id"`
-		QuestionId string    `json:"questionId"`
+		QuestionId string    `json:"questionId,omitempty"`
 		Answer     string    `json:"answer"`
-		AnswererId string    `json:"answererId"`
+		AnswererId string    `json:"answererId,omitempty"`
 		Upvote     int       `json:"upvote"`
 		Downvote   int       `json:"downvote"`
+		Answerer   Answerer  `json:"answerer"`
 		CreatedAt  time.Time `json:"created_at"`
 		UpdatedAt  time.Time `json:"updated_at"`
 	}

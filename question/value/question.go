@@ -26,6 +26,7 @@ type QuestionEntity struct {
 	AuthorId  string            `json:"authorId"`
 	Question  string            `json:"question"`
 	Author    Author            `json:"author"`
+	Answer    Answer            `json:"answer"`
 	CreatedAt time.Time         `json:"createdAt"`
 	UpdatedAt time.Time         `json:"updatedAt"`
 }
