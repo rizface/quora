@@ -39,8 +39,9 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if err = json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusBadRequest,
-			Info: "invalid request body",
+			Code:    http.StatusBadRequest,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    "invalid request body",
 		})
 
 		return
@@ -50,9 +51,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if errors.As(err, &validation.Errors{}) {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusBadRequest,
-			Data: err,
-			Info: "validation error",
+			Code:    http.StatusBadRequest,
+			Data:    err,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    "validation error",
 		})
 
 		return
@@ -60,9 +62,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, ErrEmailIsUsed) || errors.Is(err, ErrUsernameIsUsed) {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusConflict,
-			Data: account,
-			Info: err.Error(),
+			Code:    http.StatusConflict,
+			Data:    account,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    err.Error(),
 		})
 
 		return
@@ -70,8 +73,9 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusInternalServerError,
-			Info: err.Error(),
+			Code:    http.StatusInternalServerError,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    err.Error(),
 		})
 
 		span.RecordError(err)
@@ -81,9 +85,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stdres.Writer(w, stdres.Response{
-		Code: http.StatusOK,
-		Data: map[string]interface{}{"doc": account},
-		Info: "success",
+		Code:    http.StatusOK,
+		Data:    map[string]interface{}{"doc": account},
+		TraceId: span.SpanContext().TraceID().String(),
+		Info:    "success",
 	})
 }
 
@@ -95,8 +100,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusBadRequest,
-			Info: "invalid body request",
+			Code:    http.StatusBadRequest,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    "invalid body request",
 		})
 
 		return
@@ -106,8 +112,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, ErrAccountNotFound) {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusNotFound,
-			Info: err.Error(),
+			Code:    http.StatusNotFound,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    err.Error(),
 		})
 
 		return
@@ -115,8 +122,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, ErrCredential) {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusUnauthorized,
-			Info: err.Error(),
+			Code:    http.StatusUnauthorized,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    err.Error(),
 		})
 
 		return
@@ -124,8 +132,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
-			Code: http.StatusInternalServerError,
-			Info: err.Error(),
+			Code:    http.StatusInternalServerError,
+			TraceId: span.SpanContext().TraceID().String(),
+			Info:    err.Error(),
 		})
 
 		span.RecordError(err)
@@ -135,8 +144,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stdres.Writer(w, stdres.Response{
-		Code: http.StatusOK,
-		Data: result,
-		Info: "success",
+		Code:    http.StatusOK,
+		Data:    result,
+		TraceId: span.SpanContext().TraceID().String(),
+		Info:    "success",
 	})
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/rizface/quora/account"
 	"github.com/rizface/quora/provider"
 	"github.com/rizface/quora/question"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -34,7 +35,7 @@ func main() {
 
 	go func() {
 		for range listener {
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 			go func() {
 				<-ctx.Done()
 
@@ -89,7 +90,19 @@ func (a *App) Start() error {
 }
 
 func (s *App) Stop(ctx context.Context) error {
-	err := s.Deps.server.Shutdown(ctx)
+	err := s.Deps.sql.Close()
+	if err != nil {
+		return err
+	}
+	log.Println("SQL connection closed")
+
+	err = s.Deps.traceProvider.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+	log.Println("OTel TraceProvider shutdown")
+
+	err = s.Deps.server.Shutdown(ctx)
 	if err != nil {
 		return err
 	}
@@ -98,10 +111,11 @@ func (s *App) Stop(ctx context.Context) error {
 }
 
 type Dependencies struct {
-	server *http.Server
-	router *chi.Mux
-	sql    *sql.DB
-	tracer trace.Tracer
+	server        *http.Server
+	router        *chi.Mux
+	sql           *sql.DB
+	tracer        trace.Tracer
+	traceProvider *sdktrace.TracerProvider
 }
 
 func InitDependencies() *Dependencies {
@@ -113,16 +127,17 @@ func InitDependencies() *Dependencies {
 		log.Fatal(err)
 	}
 
-	tracer, err := provider.ProvideOtel()
+	traceProvider, tracer, err := provider.ProvideOtel()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	return &Dependencies{
-		router: router,
-		server: server,
-		sql:    sql,
-		tracer: tracer,
+		router:        router,
+		server:        server,
+		sql:           sql,
+		tracer:        tracer,
+		traceProvider: traceProvider,
 	}
 }
 

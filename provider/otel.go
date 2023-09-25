@@ -33,15 +33,15 @@ func newTraceProvider(url string) (*sdktrace.TracerProvider, error) {
 	), nil
 }
 
-func ProvideOtel() (trace.Tracer, error) {
+func ProvideOtel() (*sdktrace.TracerProvider, trace.Tracer, error) {
 	traceProvider, err := newTraceProvider(os.Getenv("JAEGER_EXPORTER_URL"))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	otel.SetTracerProvider(traceProvider)
 
 	tp := traceProvider.Tracer("quora-clone")
 
-	return tp, nil
+	return traceProvider, tp, nil
 }

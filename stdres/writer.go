@@ -22,6 +22,7 @@ type Response struct {
 	Data      interface{} `json:"data"`
 	RequestId string      `json:"requestId"`
 	Info      string      `json:"info"`
+	TraceId   string      `json:"traceId"`
 }
 
 func Writer(w http.ResponseWriter, resp Response) {
