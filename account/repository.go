@@ -6,32 +6,73 @@ import (
 	"errors"
 
 	"github.com/rizface/quora/account/value"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Repository struct {
-	sql *sql.DB
+	tracer trace.Tracer
+	sql    *sql.DB
 }
 
-func NewRepository(sql *sql.DB) *Repository {
-	return &Repository{sql: sql}
+func NewRepository(sql *sql.DB, tracer trace.Tracer) *Repository {
+	return &Repository{sql: sql, tracer: tracer}
 }
 
 func emailIsUsed(ctx context.Context, sql *sql.DB, email string) (bool, error) {
-	var count int
-	return count > 0, sql.
-		QueryRowContext(ctx, `SELECT COUNT(id) as count FROM accounts WHERE email = $1`, email).
-		Scan(&count)
+	span := trace.SpanFromContext(ctx)
+
+	var (
+		count int
+		err   = sql.
+			QueryRowContext(ctx, `SELECT COUNT(id) as count FROM accounts WHERE email = $1`, email).
+			Scan(&count)
+		emailIsUsed = count > 0
+	)
+
+	span.AddEvent("check email availability", trace.WithAttributes(
+		attribute.KeyValue{
+			Key:   "email",
+			Value: attribute.StringValue(email),
+		},
+		attribute.KeyValue{
+			Key:   "isUsed",
+			Value: attribute.BoolValue(emailIsUsed),
+		},
+	))
+
+	return emailIsUsed, err
 }
 
 func usernameIsUsed(ctx context.Context, sql *sql.DB, username string) (bool, error) {
-	var count int
+	span := trace.SpanFromContext(ctx)
 
-	return count > 0, sql.
-		QueryRowContext(ctx, `SELECT COUNT(id) as count FROM accounts WHERE username = $1`, username).
-		Scan(&count)
+	var (
+		count int
+		err   = sql.
+			QueryRowContext(ctx, `SELECT COUNT(id) as count FROM accounts WHERE username = $1`, username).
+			Scan(&count)
+		usernameIsUsed = count > 0
+	)
+
+	span.AddEvent("check username availability", trace.WithAttributes(
+		attribute.KeyValue{
+			Key:   "username",
+			Value: attribute.StringValue(username),
+		},
+		attribute.KeyValue{
+			Key:   "isUsed",
+			Value: attribute.BoolValue(usernameIsUsed),
+		},
+	))
+
+	return usernameIsUsed, err
 }
 
 func (r *Repository) Create(ctx context.Context, account value.AccountEntity) error {
+	ctx, span := r.tracer.Start(ctx, "account.Repository.Create")
+	defer span.End()
+
 	if used, err := emailIsUsed(ctx, r.sql, account.Email); err != nil {
 		return err
 	} else if used {
@@ -61,6 +102,9 @@ func (r *Repository) Create(ctx context.Context, account value.AccountEntity) er
 }
 
 func (r *Repository) FindByEmail(ctx context.Context, account value.AccountEntity) (value.AccountEntity, error) {
+	ctx, span := r.tracer.Start(ctx, "account.Repository.FindByEmail")
+	defer span.End()
+
 	query := `SELECT id, username, email, password FROM accounts WHERE email = $1`
 
 	err := r.sql.

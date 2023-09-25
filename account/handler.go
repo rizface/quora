@@ -3,27 +3,35 @@ package account
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/rizface/quora/account/value"
 	"github.com/rizface/quora/stdres"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
-	r   *chi.Mux
-	svc *Service
+	r      *chi.Mux
+	svc    *Service
+	tracer trace.Tracer
 }
 
-func NewHandler(r *chi.Mux, svc *Service) *Handler {
+func NewHandler(r *chi.Mux, svc *Service, tracer trace.Tracer) *Handler {
 	return &Handler{
-		r:   r,
-		svc: svc,
+		r:      r,
+		svc:    svc,
+		tracer: tracer,
 	}
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "account.Handler.Register")
+	defer span.End()
+
 	var (
 		payload value.AccountPayload
 		err     error
@@ -38,7 +46,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := h.svc.Register(r.Context(), payload)
+	account, err := h.svc.Register(ctx, payload)
 
 	if errors.As(err, &validation.Errors{}) {
 		stdres.Writer(w, stdres.Response{
@@ -66,6 +74,9 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 			Info: err.Error(),
 		})
 
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintf("error while create new user: %v", err))
+
 		return
 	}
 
@@ -77,6 +88,9 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "account.Handler.Login")
+	defer span.End()
+
 	var payload value.AccountPayload
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -88,7 +102,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.svc.Login(r.Context(), payload)
+	result, err := h.svc.Login(ctx, payload)
 
 	if errors.Is(err, ErrAccountNotFound) {
 		stdres.Writer(w, stdres.Response{
@@ -113,6 +127,9 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			Code: http.StatusInternalServerError,
 			Info: err.Error(),
 		})
+
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintf("error while login: %v", err))
 
 		return
 	}

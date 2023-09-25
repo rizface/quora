@@ -11,20 +11,17 @@ services:
       POSTGRES_USER: pgquora
       POSTGRES_PASSWORD: pgquora
       POSTGRES_DB: pgquora
-  # quora:
-  #   container_name: quora
-  #   image: quora:local
-  #   restart: on-failure
-  #   ports:
-  #     - 3000:3000
-  #   depends_on:
-  #     - pgquora
-  #   environment:
-  #     - PG_HOST=pgquora
-  #     - PG_PORT=5432
-  #     - PG_USER=pgquora
-  #     - PG_PASSWORD=pgquora
-  #     - PG_DBNAME=pgquora
-  #     - APP_PORT=:3000
-  #     - JWT_ACCESS_SECRET="4887661726968830117905367738376103857262213573279439102000507778"
-  #     - JWT_REFRESH_SECRET="6874065895899761950159723801510637484607667516049036164869962679"
+  jaeger:
+    image: jaegertracing/all-in-one:1.49
+    container_name: jaeger
+    ports:
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 4317:4317
+      - 4318:4318
+      - 14250:14250
+      - 14268:14268
+      - 14269:14269
+      - 9411:9411

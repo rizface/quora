@@ -4,19 +4,25 @@ import (
 	"context"
 
 	"github.com/rizface/quora/account/value"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Service struct {
-	repo *Repository
+	tracer trace.Tracer
+	repo   *Repository
 }
 
-func NewService(repo *Repository) *Service {
+func NewService(repo *Repository, tracer trace.Tracer) *Service {
 	return &Service{
-		repo: repo,
+		repo:   repo,
+		tracer: tracer,
 	}
 }
 
 func (s *Service) Register(ctx context.Context, payload value.AccountPayload) (value.AccountEntity, error) {
+	ctx, span := s.tracer.Start(ctx, "account.Service.Register")
+	defer span.End()
+
 	account := value.NewAccountEntity(payload)
 	if err := account.Validate(); err != nil {
 		return account, err
@@ -29,6 +35,9 @@ func (s *Service) Register(ctx context.Context, payload value.AccountPayload) (v
 	return account, nil
 }
 func (s *Service) Login(ctx context.Context, payload value.AccountPayload) (value.Authenticated, error) {
+	ctx, span := s.tracer.Start(ctx, "account.Service.Login")
+	defer span.End()
+
 	account := value.NewAccountEntity(payload)
 
 	account, err := s.repo.FindByEmail(ctx, account)

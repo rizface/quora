@@ -19,6 +19,7 @@ import (
 	"github.com/rizface/quora/account"
 	"github.com/rizface/quora/provider"
 	"github.com/rizface/quora/question"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func main() {
@@ -73,7 +74,7 @@ type App struct {
 func NewApp(d *Dependencies) *App {
 	return &App{
 		Deps:     d,
-		Account:  account.NewFeature(d.router, d.sql),
+		Account:  account.NewFeature(d.router, d.sql, d.tracer),
 		Question: question.NewFeature(d.router, d.sql),
 	}
 }
@@ -100,13 +101,19 @@ type Dependencies struct {
 	server *http.Server
 	router *chi.Mux
 	sql    *sql.DB
+	tracer trace.Tracer
 }
 
 func InitDependencies() *Dependencies {
 	router := provider.ProvideRouter()
 	server := provider.ProviderServer(router)
-	sql, err := provider.ProvideSQL()
 
+	sql, err := provider.ProvideSQL()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	tracer, err := provider.ProvideOtel()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -115,6 +122,7 @@ func InitDependencies() *Dependencies {
 		router: router,
 		server: server,
 		sql:    sql,
+		tracer: tracer,
 	}
 }
 
