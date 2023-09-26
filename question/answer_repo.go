@@ -7,11 +7,13 @@ import (
 	"log"
 
 	"github.com/rizface/quora/question/value"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type (
 	AnswerRepo struct {
-		db *sql.DB
+		db     *sql.DB
+		tracer trace.Tracer
 	}
 
 	CreateAnswerReq struct {
@@ -20,13 +22,17 @@ type (
 	}
 )
 
-func NewAnswerRepo(db *sql.DB) *AnswerRepo {
+func NewAnswerRepo(db *sql.DB, tracer trace.Tracer) *AnswerRepo {
 	return &AnswerRepo{
-		db: db,
+		db:     db,
+		tracer: tracer,
 	}
 }
 
 func (a *AnswerRepo) Create(ctx context.Context, req CreateAnswerReq) (value.Answer, error) {
+	ctx, span := a.tracer.Start(ctx, "question.AnswerRepo.Create")
+	defer span.End()
+
 	var (
 		question = req.question
 		answer   = req.answer
@@ -46,6 +52,9 @@ func (a *AnswerRepo) Create(ctx context.Context, req CreateAnswerReq) (value.Ans
 }
 
 func (a *AnswerRepo) GetOne(ctx context.Context, answerId string) (value.Answer, error) {
+	ctx, span := a.tracer.Start(ctx, "question.AnswerRepo.GetOne")
+	defer span.End()
+
 	var (
 		answer = value.Answer{}
 		query  = `
@@ -75,8 +84,11 @@ func (a *AnswerRepo) GetOne(ctx context.Context, answerId string) (value.Answer,
 	return answer, nil
 }
 
-func (r *AnswerRepo) Vote(ctx context.Context, q value.Answer, v value.Vote) error {
-	tx, err := r.db.Begin()
+func (a *AnswerRepo) Vote(ctx context.Context, q value.Answer, v value.Vote) error {
+	ctx, span := a.tracer.Start(ctx, "question.AnswerRepo.Vote")
+	defer span.End()
+
+	tx, err := a.db.Begin()
 
 	defer func(err error) {
 		if err != nil {

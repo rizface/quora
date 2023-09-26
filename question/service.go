@@ -6,10 +6,12 @@ import (
 
 	"github.com/rizface/quora/identifier"
 	"github.com/rizface/quora/question/value"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type (
 	Service struct {
+		tracer     trace.Tracer
 		repo       *Repository
 		voteRepo   *VoteRepo
 		answerRepo *AnswerRepo
@@ -29,15 +31,19 @@ type (
 	}
 )
 
-func NewService(repo *Repository, voteRepo *VoteRepo, answerRepo *AnswerRepo) *Service {
+func NewService(repo *Repository, voteRepo *VoteRepo, answerRepo *AnswerRepo, tracer trace.Tracer) *Service {
 	return &Service{
 		repo:       repo,
 		voteRepo:   voteRepo,
 		answerRepo: answerRepo,
+		tracer:     tracer,
 	}
 }
 
 func (s *Service) CreateQuestion(ctx context.Context, input Input) (value.QuestionEntity, error) {
+	ctx, span := s.tracer.Start(ctx, "question.Service.CreateQuestion")
+	defer span.End()
+
 	var (
 		accountId = input.Identity.AccountId
 		question  = value.NewQuestionEntity(input.QuestionPayload, accountId)
@@ -55,6 +61,9 @@ func (s *Service) CreateQuestion(ctx context.Context, input Input) (value.Questi
 }
 
 func (s *Service) GetQuestions(ctx context.Context, input Input) (value.Aggregate, error) {
+	ctx, span := s.tracer.Start(ctx, "question.Service.GetQuestions")
+	defer span.End()
+
 	if err := value.ValidateQuestionQueery(input.QuestionQuery); err != nil {
 		return value.Aggregate{}, err
 	}
@@ -76,6 +85,9 @@ func (s *Service) GetQuestions(ctx context.Context, input Input) (value.Aggregat
 }
 
 func (s *Service) Vote(ctx context.Context, input Input) (value.Answer, error) {
+	ctx, span := s.tracer.Start(ctx, "question.Service.Vote")
+	defer span.End()
+
 	var (
 		voterId = input.Identity.AccountId
 		vote    = value.NewVote(input.VotePayload, voterId)
@@ -117,6 +129,9 @@ func (s *Service) Vote(ctx context.Context, input Input) (value.Answer, error) {
 }
 
 func (s *Service) Answer(ctx context.Context, input Input) (value.Answer, error) {
+	ctx, span := s.tracer.Start(ctx, "question.Service.Answer")
+	defer span.End()
+
 	var (
 		answererId = input.Identity.AccountId
 		answer     = value.NewAnswer(value.NewAnswerParam{
@@ -146,6 +161,9 @@ func (s *Service) Answer(ctx context.Context, input Input) (value.Answer, error)
 }
 
 func (s *Service) DeleteQuestion(ctx context.Context, input Input) error {
+	ctx, span := s.tracer.Start(ctx, "question.Service.DeleteQuestion")
+	defer span.End()
+
 	question, err := s.repo.GetOne(ctx, input.IdQuestion)
 	if err != nil {
 		return err
@@ -163,6 +181,9 @@ func (s *Service) DeleteQuestion(ctx context.Context, input Input) error {
 }
 
 func (s *Service) UpdateQuestion(ctx context.Context, input Input) (value.QuestionEntity, error) {
+	ctx, span := s.tracer.Start(ctx, "question.Service.UpdateQuestion")
+	defer span.End()
+
 	question, err := s.repo.GetOne(ctx, input.IdQuestion)
 	if err != nil {
 		return value.QuestionEntity{}, err

@@ -76,7 +76,7 @@ func NewApp(d *Dependencies) *App {
 	return &App{
 		Deps:     d,
 		Account:  account.NewFeature(d.router, d.sql, d.tracer),
-		Question: question.NewFeature(d.router, d.sql),
+		Question: question.NewFeature(d.router, d.sql, d.tracer),
 	}
 }
 

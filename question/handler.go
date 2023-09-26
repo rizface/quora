@@ -3,6 +3,7 @@ package question
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -10,19 +11,26 @@ import (
 	"github.com/rizface/quora/identifier"
 	"github.com/rizface/quora/question/value"
 	"github.com/rizface/quora/stdres"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Handler struct {
-	svc *Service
+	tracer trace.Tracer
+	svc    *Service
 }
 
-func NewHandler(svc *Service) *Handler {
+func NewHandler(svc *Service, tracer trace.Tracer) *Handler {
 	return &Handler{
-		svc: svc,
+		tracer: tracer,
+		svc:    svc,
 	}
 }
 
 func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "question.Handler.CreateQuestion")
+	defer span.End()
+
 	identity, err := identifier.GetFromContext(r.Context())
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
@@ -45,7 +53,7 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	question, err := h.svc.CreateQuestion(r.Context(), Input{
+	question, err := h.svc.CreateQuestion(ctx, Input{
 		Identity:        *identity,
 		QuestionPayload: payload,
 	})
@@ -67,6 +75,9 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 			Info: err.Error(),
 		})
 
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintln("error while create new question: %v", err))
+
 		return
 	}
 
@@ -80,6 +91,9 @@ func (h *Handler) CreateQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "question.Handler.GetQuestion")
+	defer span.End()
+
 	identity, err := identifier.GetFromContext(r.Context())
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
@@ -100,7 +114,7 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := h.svc.GetQuestions(r.Context(), Input{
+	result, err := h.svc.GetQuestions(ctx, Input{
 		Identity:      *identity,
 		QuestionQuery: query,
 	})
@@ -122,6 +136,9 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 			Info: err.Error(),
 		})
 
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintf("error while get list of questions: %v", err))
+
 		return
 	}
 
@@ -136,6 +153,9 @@ func (h *Handler) GetQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "question.Handler.Vote")
+	defer span.End()
+
 	identity, err := identifier.GetFromContext(r.Context())
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
@@ -159,7 +179,7 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	answer, err := h.svc.Vote(r.Context(), Input{
+	answer, err := h.svc.Vote(ctx, Input{
 		Identity:    *identity,
 		VotePayload: vote,
 	})
@@ -192,6 +212,9 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 			Info: err.Error(),
 		})
 
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintf("error while vote answer: %v", err))
+
 		return
 	}
 
@@ -205,6 +228,9 @@ func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "question.Handler.AnswerQuestion")
+	defer span.End()
+
 	identity, err := identifier.GetFromContext(r.Context())
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
@@ -226,7 +252,7 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	answer, err := h.svc.Answer(r.Context(), Input{
+	answer, err := h.svc.Answer(ctx, Input{
 		Identity:      *identity,
 		AnswerPayload: payload,
 	})
@@ -246,6 +272,9 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 			Code: http.StatusNotFound,
 			Info: err.Error(),
 		})
+
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintf("error while answer question: %v", err))
 
 		return
 	}
@@ -267,6 +296,9 @@ func (h *Handler) AnswerQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteQuestion(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "question.Handler.DeleteQuestion")
+	defer span.End()
+
 	identity, err := identifier.GetFromContext(r.Context())
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
@@ -282,7 +314,7 @@ func (h *Handler) DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 		Identity:   *identity,
 	}
 
-	err = h.svc.DeleteQuestion(r.Context(), input)
+	err = h.svc.DeleteQuestion(ctx, input)
 	if errors.Is(err, ErrNotTheAuthor) {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusUnauthorized,
@@ -307,6 +339,9 @@ func (h *Handler) DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 			Info: err.Error(),
 		})
 
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintf("error while delete question: %v", err))
+
 		return
 	}
 
@@ -317,13 +352,15 @@ func (h *Handler) DeleteQuestion(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateQuestion(w http.ResponseWriter, r *http.Request) {
+	ctx, span := h.tracer.Start(r.Context(), "question.Handler.UpdateQuestion")
+	defer span.End()
+
 	var (
-		ctx        = r.Context()
 		payload    value.QuestionPayload
 		idQuestion = chi.URLParam(r, "id")
 	)
 
-	identity, err := identifier.GetFromContext(ctx)
+	identity, err := identifier.GetFromContext(r.Context())
 	if err != nil {
 		stdres.Writer(w, stdres.Response{
 			Code: http.StatusUnauthorized,
@@ -343,7 +380,7 @@ func (h *Handler) UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	question, err := h.svc.UpdateQuestion(r.Context(), Input{
+	question, err := h.svc.UpdateQuestion(ctx, Input{
 		IdQuestion:      idQuestion,
 		QuestionPayload: payload,
 		Identity:        *identity,
@@ -383,6 +420,9 @@ func (h *Handler) UpdateQuestion(w http.ResponseWriter, r *http.Request) {
 			Code: http.StatusInternalServerError,
 			Info: err.Error(),
 		})
+
+		span.RecordError(err)
+		span.SetStatus(codes.Error, fmt.Sprintf("error while update question: %v", err))
 
 		return
 	}

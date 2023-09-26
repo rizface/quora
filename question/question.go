@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/rizface/quora/identifier"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Feature struct {
@@ -12,13 +13,13 @@ type Feature struct {
 	r       *chi.Mux
 }
 
-func NewFeature(r *chi.Mux, db *sql.DB) *Feature {
+func NewFeature(r *chi.Mux, db *sql.DB, tracer trace.Tracer) *Feature {
 	var (
-		questionRepo = NewRepository(db)
-		voteRepo     = NewVoteRepository(db)
-		answerRepo   = NewAnswerRepo(db)
-		svc          = NewService(questionRepo, voteRepo, answerRepo)
-		handler      = NewHandler(svc)
+		questionRepo = NewRepository(db, tracer)
+		voteRepo     = NewVoteRepository(db, tracer)
+		answerRepo   = NewAnswerRepo(db, tracer)
+		svc          = NewService(questionRepo, voteRepo, answerRepo, tracer)
+		handler      = NewHandler(svc, tracer)
 	)
 
 	return &Feature{

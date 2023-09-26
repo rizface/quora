@@ -6,23 +6,25 @@ import (
 	"errors"
 
 	"github.com/rizface/quora/question/value"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type VoteRepo struct {
-	db *sql.DB
+	db     *sql.DB
+	tracer trace.Tracer
 }
 
-func NewVoteRepository(db *sql.DB) *VoteRepo {
+func NewVoteRepository(db *sql.DB, tracer trace.Tracer) *VoteRepo {
 	return &VoteRepo{
-		db: db,
+		db:     db,
+		tracer: tracer,
 	}
 }
 
-func (v *VoteRepo) CreateVoter(ctx context.Context, vote value.Vote) (value.Vote, error) {
-	return value.Vote{}, nil
-}
-
 func (v *VoteRepo) GetOldVote(ctx context.Context, vote value.Vote) (value.Vote, error) {
+	ctx, span := v.tracer.Start(ctx, "question.VoteRepo.GetOldVote")
+	defer span.End()
+
 	var (
 		result = value.Vote{}
 		query  = `
@@ -45,6 +47,9 @@ func (v *VoteRepo) GetOldVote(ctx context.Context, vote value.Vote) (value.Vote,
 }
 
 func (v *VoteRepo) DeleteVote(ctx context.Context, vote value.Vote) error {
+	ctx, span := v.tracer.Start(ctx, "question.VoteRepo.DeleteVote")
+	defer span.End()
+
 	command := `
 		DELETE FROM votes WHERE voter_id = $1 AND answer_id = $2
 	`

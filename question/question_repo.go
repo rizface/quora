@@ -7,19 +7,25 @@ import (
 	"fmt"
 
 	"github.com/rizface/quora/question/value"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Repository struct {
-	db *sql.DB
+	db     *sql.DB
+	tracer trace.Tracer
 }
 
-func NewRepository(db *sql.DB) *Repository {
+func NewRepository(db *sql.DB, tracer trace.Tracer) *Repository {
 	return &Repository{
-		db: db,
+		db:     db,
+		tracer: tracer,
 	}
 }
 
 func (r *Repository) Create(ctx context.Context, q value.QuestionEntity) error {
+	ctx, span := r.tracer.Start(ctx, "question.Repository.Create")
+	defer span.End()
+
 	query := `
 		INSERT INTO questions (id, author_id, space_id, question) VALUES($1, $2, $3, $4)
 	`
@@ -30,6 +36,9 @@ func (r *Repository) Create(ctx context.Context, q value.QuestionEntity) error {
 }
 
 func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]value.QuestionEntity, error) {
+	ctx, span := r.tracer.Start(ctx, "question.Repository.GetList")
+	defer span.End()
+
 	var (
 		questions = []value.QuestionEntity{}
 		query     = `
@@ -105,6 +114,9 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 }
 
 func (r *Repository) GetTotalQuestions(ctx context.Context) (int, error) {
+	ctx, span := r.tracer.Start(ctx, "question.Repository.GetTotalQuestions")
+	defer span.End()
+
 	var (
 		total int
 		query = `
@@ -120,6 +132,9 @@ func (r *Repository) GetTotalQuestions(ctx context.Context) (int, error) {
 }
 
 func (r *Repository) GetOne(ctx context.Context, questionId string) (value.QuestionEntity, error) {
+	ctx, span := r.tracer.Start(ctx, "question.Repository.GetOne")
+	defer span.End()
+
 	var (
 		question value.QuestionEntity
 		query    = `
@@ -148,6 +163,9 @@ func (r *Repository) GetOne(ctx context.Context, questionId string) (value.Quest
 }
 
 func (r *Repository) DeleteQuestion(ctx context.Context, question value.QuestionEntity) error {
+	ctx, span := r.tracer.Start(ctx, "question.Repository.DeleteQuestion")
+	defer span.End()
+
 	command := `
 		DELETE FROM questions WHERE id = $1
 	`
@@ -158,6 +176,9 @@ func (r *Repository) DeleteQuestion(ctx context.Context, question value.Question
 }
 
 func (r *Repository) UpdateQuestion(ctx context.Context, question value.QuestionEntity) error {
+	ctx, span := r.tracer.Start(ctx, "question.Repository.UpdateQuestion")
+	defer span.End()
+
 	command := `
 		UPDATE questions SET question = $1, space_id = $2 WHERE id = $3
 	`
