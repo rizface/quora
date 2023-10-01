@@ -42,13 +42,22 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 	var (
 		questions = []value.QuestionEntity{}
 		query     = `
-			SELECT 
-			q.id, q.author_id, q.space_id, q.question, q.created_at, q.updated_at, a.id, a.answer, 
-			a.upvote, a.downvote, a.created_At, a.updated_at,
+		with questions_answers as (
+			SELECT distinct on (q.question, a.updated_at, a.upvote)
+			q.id as question_id, 
+			q.author_id, q.space_id, q.question, q.created_at, q.updated_at, 
+			a.id as answer_id, 
+			a.answer,a.upvote, a.downvote, 
+			a.created_at as answer_created_at, 
+			a.updated_at as answer_updated_at, 
 			ac.id, ac.username 
 			FROM questions q
 			INNER JOIN answers a ON a.question_id = q.id
 			INNER JOIN accounts ac ON ac.id = a.answerer_id
+			ORDER BY a.upvote DESC, a.updated_at DESC
+		)
+		
+		SELECT DISTINCT ON(question) * FROM questions_answers
 		`
 	)
 
@@ -56,7 +65,7 @@ func (r *Repository) GetList(ctx context.Context, q value.QuestionQuery) ([]valu
 		query = fmt.Sprintf("%s %s %s", query, "WHERE space_id IN", q.SpaceIds.ToSqlArray())
 	}
 
-	query = fmt.Sprintf("%s %s %s", query, "ORDER BY a.updated_at DESC", "LIMIT $1 OFFSET $2")
+	query = fmt.Sprintf("%s %s", query, "LIMIT $1 OFFSET $2")
 
 	rows, err := r.db.QueryContext(ctx, query, q.Limit, q.Skip)
 	if err != nil {
