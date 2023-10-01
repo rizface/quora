@@ -35,7 +35,7 @@ func (suite *IntegrationTestSuite) SetupSuite() {
 }
 
 func (suite *IntegrationTestSuite) TearDownSuite() {
-	suite.cleaner()
+	// suite.cleaner()
 }
 
 func TestIntegrationTest(t *testing.T) {

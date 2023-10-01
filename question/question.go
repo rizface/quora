@@ -41,6 +41,7 @@ func (q *Feature) RegisterRoutes() {
 
 		r.Route("/answers", func(r chi.Router) {
 			r.Post("/", q.handler.AnswerQuestion)
+			// r.Get("/", q.Handler.GetAnswersOfQuestion) -> basically get all answers for specifict question, order by most upvoted
 			r.Patch("/{answerId}/vote", q.handler.Vote)
 		})
 	})
